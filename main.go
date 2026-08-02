@@ -1,166 +1,311 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"fmt"
+	"os/exec"
 	"sync"
 	"time"
 )
 
-// ---- 1. TYPES OF EVENTS ----
+// ---- 1. CORE TYPES ----
+type TaskState string
+
+const (
+	TaskPending   TaskState = "PENDING"
+	TaskScheduled TaskState = "SCHEDULED"
+	TaskRunning   TaskState = "RUNNING"
+	TaskCompleted TaskState = "COMPLETED"
+	TaskFailed    TaskState = "FAILED"
+)
+
+type Task struct {
+	ID        string
+	Command   string   // e.g. "echo"
+	Args      []string // e.g. ["Hello", "World"]
+	State     TaskState
+	WorkerID  string
+	Output    string
+	ErrorMsg  string
+	CreatedAt time.Time
+}
+
+type Worker struct {
+	ID       string
+	LastSeen time.Time
+}
+
 type EventType string
 
 const (
-	EventPodAdded   EventType = "ADDED"
-	EventPodUpdated EventType = "UPDATED"
+	EventTaskCreated EventType = "TASK_CREATED"
+	EventTaskUpdated EventType = "TASK_UPDATED"
 )
 
 type WatchEvent struct {
 	Type EventType
-	Pod  *Pod
+	Task *Task
 }
 
-type Pod struct {
-	Name   string
-	Image  string
-	Node   string
-	Status string
+// ---- 2. API SERVER / STATE STORE ----
+type APIServer struct {
+	mu          sync.RWMutex
+	tasks       map[string]*Task
+	workers     map[string]*Worker
+	subscribers []chan WatchEvent
 }
 
-// ---- 2. THE EVENT-DRIVEN API SERVER ----
-type APIserver struct {
-	mu          sync.Mutex
-	pods        map[string]*Pod
-	subscribers []chan WatchEvent // Broadcast channels for components
-}
-
-func NewAPIserver() *APIserver {
-	return &APIserver{
-		pods:        make(map[string]*Pod),
-		subscribers: make([]chan WatchEvent, 0),
+func NewAPIServer() *APIServer {
+	return &APIServer{
+		tasks:   make(map[string]*Task),
+		workers: make(map[string]*Worker),
 	}
 }
 
-// Watch allows Scheduler and Kubelets to subscribe to real-time updates
-func (api *APIserver) Watch() <-chan WatchEvent {
+func (api *APIServer) Watch() <-chan WatchEvent {
 	api.mu.Lock()
 	defer api.mu.Unlock()
-	
-	// Create a buffered channel so slower components don't block the API server
+
 	ch := make(chan WatchEvent, 100)
 	api.subscribers = append(api.subscribers, ch)
 	return ch
 }
 
-// broadcast sends the event to all active watchers asynchronously
-func (api *APIserver) broadcast(event WatchEvent) {
+func (api *APIServer) broadcast(event WatchEvent) {
+	api.mu.RLock()
+	defer api.mu.RUnlock()
+
 	for _, sub := range api.subscribers {
 		select {
 		case sub <- event:
-		default:
-			// Drop event or handle slow consumer to prevent deadlocks
+		default: // Non-blocking
 		}
 	}
 }
 
-func (api *APIserver) CreatePod(name, image string) {
+func (api *APIServer) SubmitTask(id string, command string, args []string) {
 	api.mu.Lock()
-	pod := &Pod{Name: name, Image: image, Status: "Pending"}
-	api.pods[name] = pod
+	task := &Task{
+		ID:        id,
+		Command:   command,
+		Args:      args,
+		State:     TaskPending,
+		CreatedAt: time.Now(),
+	}
+	api.tasks[id] = task
 	api.mu.Unlock()
 
-	fmt.Printf("[API-Server] Pod '%s' created\n", name)
-	api.broadcast(WatchEvent{Type: EventPodAdded, Pod: pod})
+	fmt.Printf("[API Server] Submitted Task %s: '%s %v'\n", id, command, args)
+	api.broadcast(WatchEvent{Type: EventTaskCreated, Task: task})
 }
 
-func (api *APIserver) UpdatePod(pod *Pod) {
+func (api *APIServer) UpdateTaskState(id string, state TaskState, workerID string, output string, err string) {
 	api.mu.Lock()
-	api.pods[pod.Name] = pod
+	task, exists := api.tasks[id]
+	if !exists {
+		api.mu.Unlock()
+		return
+	}
+
+	task.State = state
+	if workerID != "" {
+		task.WorkerID = workerID
+	}
+	if output != "" {
+		task.Output = output
+	}
+	if err != "" {
+		task.ErrorMsg = err
+	}
 	api.mu.Unlock()
 
-	api.broadcast(WatchEvent{Type: EventPodUpdated, Pod: pod})
+	api.broadcast(WatchEvent{Type: EventTaskUpdated, Task: task})
 }
 
-// ---- 3. THE SCALABLE SCHEDULER ----
-// Instead of loops, it sits and blocks on the channel until a Pod event arrives
-func StartScheduler(api *APIserver, availableNodes []string) {
+func (api *APIServer) Heartbeat(workerID string) {
+	api.mu.Lock()
+	defer api.mu.Unlock()
+	api.workers[workerID] = &Worker{
+		ID:       workerID,
+		LastSeen: time.Now(),
+	}
+}
+
+func (api *APIServer) GetHealthyWorkerIDs(timeout time.Duration) []string {
+	api.mu.RLock()
+	defer api.mu.RUnlock()
+
+	var active []string
+	now := time.Now()
+	for id, w := range api.workers {
+		if now.Sub(w.LastSeen) <= timeout {
+			active = append(active, id)
+		}
+	}
+	return active
+}
+
+// ---- 3. SCHEDULER ----
+func StartScheduler(api *APIServer) {
 	events := api.Watch()
-	var nodeIndex int
 
 	go func() {
+		var roundRobin int
 		for event := range events {
-			// Scalability Win: We ONLY evaluate the single pod that triggered the event
-			pod := event.Pod
-			if pod.Node == "" {
-				// Round-robin distribution across many worker nodes
-				assignedNode := availableNodes[nodeIndex%len(availableNodes)]
-				nodeIndex++
+			task := event.Task
 
-				// Create a copy to modify safely
-				updatedPod := *pod
-				updatedPod.Node = assignedNode
-				
-				fmt.Printf("[Scheduler] Assigned '%s' to '%s'\n", pod.Name, assignedNode)
-				api.UpdatePod(&updatedPod)
+			// Schedule pending tasks
+			if task.State == TaskPending {
+				workers := api.GetHealthyWorkerIDs(3 * time.Second)
+				if len(workers) == 0 {
+					fmt.Printf("[Scheduler] Warning: No healthy workers available for task %s!\n", task.ID)
+					continue
+				}
+
+				// Pick worker via Round-Robin
+				assignedWorker := workers[roundRobin%len(workers)]
+				roundRobin++
+
+				fmt.Printf("[Scheduler] Assigned Task '%s' to Worker '%s'\n", task.ID, assignedWorker)
+				api.UpdateTaskState(task.ID, TaskScheduled, assignedWorker, "", "")
 			}
 		}
 	}()
 }
 
-// ---- 4. THE SCALABLE KUBELET ----
-type Kubelet struct {
-	NodeName string
-	api      *APIserver
+// ---- 4. WORKER NODE (Executes Shell Commands) ----
+type WorkerRunner struct {
+	ID     string
+	api    *APIServer
+	stopCh chan struct{}
 }
 
-func StartKubelet(nodeName string, api *APIserver) {
-	k := &Kubelet{NodeName: nodeName, api: api}
-	events := api.Watch()
+func NewWorkerRunner(id string, api *APIServer) *WorkerRunner {
+	return &WorkerRunner{
+		ID:     id,
+		api:    api,
+		stopCh: make(chan struct{}),
+	}
+}
 
+func (w *WorkerRunner) Start() {
+	// 1. Heartbeat Goroutine
+	go func() {
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				w.api.Heartbeat(w.ID)
+			case <-w.stopCh:
+				return
+			}
+		}
+	}()
+
+	// 2. Task Listener
+	events := w.api.Watch()
 	go func() {
 		for event := range events {
-			pod := event.Pod
-			// Scalability Win: Kubelet instantly ignores pods belonging to other nodes
-			if pod.Node == k.NodeName && pod.Status == "Pending" {
-				// Run the container launch in its own goroutine so it doesn't block the queue!
-				go k.reconcile(pod)
+			task := event.Task
+			// Only pick up tasks scheduled specifically for this worker
+			if task.State == TaskScheduled && task.WorkerID == w.ID {
+				go w.executeTask(task)
 			}
 		}
 	}()
 }
 
-func (k *Kubelet) reconcile(pod *Pod) {
-	fmt.Printf("[%s Kubelet] Launching '%s' using image '%s'...\n", k.NodeName, pod.Name, pod.Image)
-	
-	// Simulate container startup time
-	time.Sleep(1 * time.Second)
+func (w *WorkerRunner) executeTask(task *Task) {
+	fmt.Printf("[%s Worker] Starting Task '%s'...\n", w.ID, task.ID)
+	w.api.UpdateTaskState(task.ID, TaskRunning, w.ID, "", "")
 
-	updatedPod := *pod
-	updatedPod.Status = "Running"
-	k.api.UpdatePod(&updatedPod)
-	fmt.Printf("[%s Kubelet] Pod '%s' is now Running\n", k.NodeName, pod.Name)
+	// Set a execution timeout guard
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, task.Command, task.Args...)
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	if err != nil {
+		fmt.Printf("[%s Worker] Task '%s' Failed: %v\n", w.ID, task.ID, err)
+		w.api.UpdateTaskState(task.ID, TaskFailed, w.ID, stdout.String(), err.Error())
+		return
+	}
+
+	fmt.Printf("[%s Worker] Task '%s' Completed Successfully!\n", w.ID, task.ID)
+	w.api.UpdateTaskState(task.ID, TaskCompleted, w.ID, stdout.String(), "")
 }
 
-// ---- 5. THE SCALE TEST ----
+// ---- 5. RECOVERY MANAGER (Re-schedules Dead Tasks) ----
+func StartHealthMonitor(api *APIServer) {
+	go func() {
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			healthy := api.GetHealthyWorkerIDs(3 * time.Second)
+			healthyMap := make(map[string]bool)
+			for _, id := range healthy {
+				healthyMap[id] = true
+			}
+
+			api.mu.RLock()
+			for _, task := range api.tasks {
+				// If a task is scheduled or running on a dead worker, re-queue it!
+				if (task.State == TaskScheduled || task.State == TaskRunning) && !healthyMap[task.WorkerID] {
+					fmt.Printf("[HealthMonitor] Worker '%s' is DEAD! Rescheduling Task '%s'...\n", task.WorkerID, task.ID)
+					go api.UpdateTaskState(task.ID, TaskPending, "", "", "Worker Node Died")
+				}
+			}
+			api.mu.RUnlock()
+		}
+	}()
+}
+
+// ---- 6. DEMO / TEST RUNNER ----
 func main() {
-	api := NewAPIserver()
+	api := NewAPIServer()
 
-	// Scale up our infrastructure: 3 active worker nodes
-	nodes := []string{"worker-node-1", "worker-node-2", "worker-node-3"}
+	// Start Scheduler and Failover Monitor
+	StartScheduler(api)
+	StartHealthMonitor(api)
 
-	StartScheduler(api, nodes)
-	for _, node := range nodes {
-		StartKubelet(node, api)
-	}
+	// Spawn 2 Active Worker Nodes
+	worker1 := NewWorkerRunner("worker-alpha", api)
+	worker2 := NewWorkerRunner("worker-beta", api)
 
-	time.Sleep(100 * time.Millisecond)
+	worker1.Start()
+	worker2.Start()
 
-	fmt.Println("\n--- Simulating High Load: Deploying 10 Pods at once ---")
-	for i := 1; i <= 10; i++ {
-		podName := fmt.Sprintf("app-replica-%d", i)
-		imageName := fmt.Sprintf("custom-image-%d:v1", i)
-		api.CreatePod(podName, imageName)
-	}
+	// Give workers a moment to heartbeat & register
+	time.Sleep(500 * time.Millisecond)
 
-	// Wait for processing to finish
+	fmt.Println("\n--- Submitting Real Terminal Tasks ---")
+
+	// Task 1: Print text
+	api.SubmitTask("task-1", "echo", []string{"Hello from Real Task Scheduler!"})
+
+	// Task 2: Simulate work with sleep
+	api.SubmitTask("task-2", "sleep", []string{"1"})
+
+	// Task 3: Command that will fail
+	api.SubmitTask("task-3", "ls", []string{"/non_existent_directory_xyz"})
+
 	time.Sleep(3 * time.Second)
+
+	// Output summary
+	fmt.Println("\n--- Final Task Reports ---")
+	api.mu.RLock()
+	for id, t := range api.tasks {
+		fmt.Printf("[%s] State: %-10s | Output: %-35q | Err: %s\n",
+			id, t.State, t.Output, t.ErrorMsg)
+	}
+	api.mu.RUnlock()
 }
