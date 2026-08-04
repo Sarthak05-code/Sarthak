@@ -31,4 +31,8 @@ go.work.sum
 # .idea/
 # .vscode/
 main.go
-
+zig-x86_64-windows-0.16.0/
+Zig-Work/.zig-cache/
+Zig-Work/src/root.zig
+Zig-Work/build.zig
+Zig-Work/build.zig.zon
