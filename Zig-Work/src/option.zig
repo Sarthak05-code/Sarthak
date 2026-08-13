@@ -1,14 +1,14 @@
 const std = @import("std");
 
+pub fn number_div(x: f64, y: f64) !f64 {
+    return x / y;
+}
 
-pub fn divisionTest(x: f64) ?f64 {
-    if (x > -1) {
-        return @mod(x, 0);
-    }
-    return null;
+test "Number Division" {
+    const result = try number_div(12.0, 2.0);
+    try std.testing.expectEqual(6.0, result);
 }
 
 pub fn main() !void {
-    const value = divisionTest(12);
-    std.debug.print("The valye is {any}\n", .{value});
+    std.debug.print("Hello, world", .{});
 }
