@@ -1,14 +1,14 @@
 const std = @import("std");
 
-pub fn number_div(x: f64, y: f64) !f64 {
-    return x / y;
+pub fn return_exp(x: u32, exp_level: u5) u32 {
+    return x >> exp_level;
 }
 
-test "Number Division" {
-    const result = try number_div(12.0, 2.0);
-    try std.testing.expectEqual(6.0, result);
-}
+pub fn main() void {
+    const array: [9]u32 = .{ 5, 2, 55, 1, 4, 2, 5, 2, 45 };
 
-pub fn main() !void {
-    std.debug.print("Hello, world", .{});
+    for (0..array.len) |i| {
+        const number = return_exp(array[i], 2);
+        std.debug.print("The number {} is: {}\n", .{ array[i], number });
+    }
 }
