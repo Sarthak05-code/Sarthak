@@ -1,18 +1,18 @@
 const std = @import("std");
 
-pub const Circle = struct {
+pub const Rectangle = struct {
     a: usize,
     b: usize,
 
-    pub fn init(a: usize, b: usize) Circle {
+    pub fn init(a: usize, b: usize) Rectangle {
         return .{ .a = a, .b = b };
     }
 
-    pub fn area(self: Circle) usize {
+    pub fn area(self: Rectangle) usize {
         return self.a * self.b;
     }
 
-    pub fn scale(self: *Circle, factor: usize) void {
+    pub fn scale(self: *Rectangle, factor: usize) void {
         self.a *= factor;
         self.b *= factor;
     }
@@ -25,7 +25,7 @@ pub const Advance = struct {
         self.current_pos += 1;
     }
 
-    pub fn decend(self: *Advance) void {
+    pub fn descend(self: *Advance) void {
         if (self.current_pos > 0) {
             self.current_pos -= 1;
         }
@@ -35,22 +35,22 @@ pub const Advance = struct {
         self.current_pos += steps;
     }
 
-    pub fn scalable_decend(self: *Advance, steps: usize) void {
+    pub fn scalable_descend(self: *Advance, steps: usize) void {
         self.current_pos = if (self.current_pos >= steps)
             self.current_pos - steps
         else blk: {
-            std.debug.print("Not possible to decend below 0\n", .{});
+            std.debug.print("Not possible to descend below 0\n", .{});
             break :blk 0;
         };
     }
 
     pub fn reset(self: *Advance) void {
-        self.current_pos = 0; 
+        self.current_pos = 0;
     }
 };
 
 pub fn main() !void {
-    var shape = Circle.init(12, 10);
+    var shape = Rectangle.init(12, 10);
     const initial_area = shape.area();
     std.debug.print("Initial Area: {}\n", .{initial_area});
 
@@ -59,7 +59,7 @@ pub fn main() !void {
     std.debug.print("Scaled Area:  {}\n", .{new_area});
 
     var pos: Advance = .{};
-    pos.decend();
+    pos.descend();
     std.debug.print("Current pos : {}\n", .{pos.current_pos});
 
     pos.advance();
@@ -68,6 +68,6 @@ pub fn main() !void {
     pos.scalable_advance(3);
     std.debug.print("Current steps : {}\n", .{pos.current_pos});
 
-    pos.scalable_decend(5);
+    pos.scalable_descend(5);
     std.debug.print("Current steps : {}\n", .{pos.current_pos});
 }
