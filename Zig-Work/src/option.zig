@@ -27,7 +27,22 @@ pub const Circle = struct {
     }
 };
 
-pub fn main() void {
+// Simulating a incrementor
+pub const Advance = struct {
+    current_pos: usize = 0,
+    // increase the current_pos by 1. has to be var to work
+    pub fn advance(self: *Advance) void {
+        self.current_pos += 1;
+    }
+
+    pub fn decend(self: *Advance) void {
+        if (self.current_pos > 0) {
+            self.current_pos -= 1;
+        }
+    }
+};
+
+pub fn main() !void {
     // Calling Constructor
     var shape = Circle.init(12, 10);
 
@@ -40,4 +55,12 @@ pub fn main() void {
 
     const new_area = shape.area();
     std.debug.print("Scaled Area:  {}\n", .{new_area}); // 480
+
+    var pos: Advance = .{}; // will be 0 if you don't specify a initial point
+
+    pos.decend();
+    std.debug.print("Current pos : {}\n", .{pos.current_pos});
+
+    pos.advance();
+    std.debug.print("Current pos : {}\n", .{pos.current_pos});
 }
