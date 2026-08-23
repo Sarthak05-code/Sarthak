@@ -2,10 +2,15 @@ const A = @import("option.zig");
 const std = @import("std");
 const built = @import("builtin");
 const os = built.os.tag;
+const args = std.process.Args;
 
-const e = std.math;
+pub const Week = enum { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday };
+
+const current_week = Week.Thursday;
 
 pub fn main() !void {
+    std.debug.print("Current week : {}\n", .{current_week});
+
     var pos: A.Advance = .{};
     switch (os) {
         .windows => {
