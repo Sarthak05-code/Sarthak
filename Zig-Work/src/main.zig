@@ -1,5 +1,8 @@
 const std = @import("std");
 
+const GLOBAL : i32 = 1;
+
+
 pub const Outer = struct {
     pub const Inner = struct {
         value: i32 = undefined,
