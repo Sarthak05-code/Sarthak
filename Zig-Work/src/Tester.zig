@@ -22,10 +22,18 @@ fn errorMessage(err: Errors) []const u8 {
     };
 }
 
+fn recursion(x: i64, depth: usize) Errors!i64 {
+    if (depth > 100)
+        return Errors.RecursionLimit;
+
+    if (x <= 1)
+        return x;
+
+    return try recursion(x - 2, depth + 1) + try recursion(x - 1, depth + 1);
+}
 pub fn main() !void {
     const array = [_]i32{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-    const index: usize = 12;
-
+    const index: usize = 1;
     const answer = arrayReturn(array, index) catch |err| {
         std.debug.print(
             "Error: {s}\n",
@@ -34,5 +42,11 @@ pub fn main() !void {
         return;
     };
 
+    const recAnswer = recursion(40, 0) catch |err| {
+        std.debug.print("Error: {s}\n", .{errorMessage(err)});
+        return;
+    };
+
     std.debug.print("Answer: {}\n", .{answer});
+    std.debug.print("Answer: {}\n", .{recAnswer});
 }
