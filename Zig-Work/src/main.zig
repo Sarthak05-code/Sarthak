@@ -53,7 +53,7 @@ pub fn main(init: std.process.Init) !void {
             page_faults += 1;
         }
 
-        std.debug.print("Page {d}: {any} -> {s}\n", .{ page, frames , if (found) "hit" else "fault" });
+        std.debug.print("Page {d}: {any} -> {s}\n", .{ page, frames, if (found) "hit" else "fault" });
     }
 
     std.debug.print("\nTotal page faults: {d}\n", .{page_faults});
