@@ -1,54 +1,55 @@
 const std = @import("std");
 
-const Errors = error{
-    StackOverflow,
-    RecursionLimit,
-    ArrayOutOfBounds,
-};
-// INFO : Here is a comment.
-fn arrayReturn(array: [10]i32, index: usize) Errors!i32 {
-    if (index >= array.len) {
-        return Errors.ArrayOutOfBounds;
+const Base = enum { binary, decimal, octal, hexadecimal };
+
+pub const NumberConversion = struct {
+    pub fn toBase(number: usize, base: Base, buffer: []u8) ![]const u8 {
+        switch (base) {
+            .binary => {
+                // NOTE : Special case we make for number 0.
+                if (number == 0) {
+                    buffer[0] = '0';
+                    return buffer[0..1];
+                }
+                const digits = "01";
+
+                var temp = number;
+                var index: usize = 0;
+
+                // NOTE : store the binary now (reverse order)
+                while (temp > 0) {
+                    const remainder = @rem(temp, 2);
+                    buffer[index] = digits[remainder];
+
+                    temp = @divFloor(temp, 2);
+                    index += 1;
+                }
+
+                // NOTE : Reversal role here
+                var left: usize = 0;
+                var right: usize = index - 1;
+
+                while (left < right) {
+                    const swap = buffer[left];
+                    buffer[left] = buffer[right];
+                    buffer[right] = swap;
+
+                    left += 1;
+                    right -= 1;
+                }
+                return buffer[0..index];
+            },
+
+            .decimal => {},
+            .octal => {},
+            .hexadecimal => {},
+        }
     }
-
-    return array[index];
-}
-// TODO : Add more error here.
-fn errorMessage(err: Errors) []const u8 {
-    return switch (err) {
-        Errors.StackOverflow => "Stack overflow occurred.",
-        Errors.RecursionLimit => "Recursion limit reached.",
-        Errors.ArrayOutOfBounds => "The requested array index does not exist.",
-    };
-}
-
-// WARNING : Code can break if we add to big of a number.
-fn recursion(x: i64, depth: usize) Errors!i64 {
-    if (depth > 100)
-        return Errors.RecursionLimit;
-
-    if (x <= 1)
-        return x;
-
-    return try recursion(x - 2, depth + 1) + try recursion(x - 1, depth + 1);
-}
+};
 
 pub fn main() !void {
-    const array = [_]i32{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-    const index: usize = 1;
-    const answer = arrayReturn(array, index) catch |err| {
-        std.debug.print(
-            "Error: {s}\n",
-            .{errorMessage(err)},
-        );
-        return;
-    };
+    var buffer: [64]u8 = undefined;
 
-    const recAnswer = recursion(40, 0) catch |err| {
-        std.debug.print("Error: {s}\n", .{errorMessage(err)});
-        return;
-    };
-
-    std.debug.print("Answer: {}\n", .{answer});
-    std.debug.print("Answer: {}\n", .{recAnswer});
+    const answer = try NumberConversion.toBase(123, .binary, &buffer);
+    std.debug.print("Binary = {s}\n", .{answer});
 }
