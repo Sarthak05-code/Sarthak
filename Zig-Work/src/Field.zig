@@ -1,5 +1,7 @@
 const std = @import("std");
 const NAME = "Sarthak";
+const Full = "Sarthak Thapa";
+
 
 pub const Name = struct {
     first_name: []const u8,
