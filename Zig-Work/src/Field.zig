@@ -1,4 +1,6 @@
 const std = @import("std");
+const built = @import("builtin");
+const os = built.os.tag;
 
 pub const Name = struct {
     first_name: []const u8,
