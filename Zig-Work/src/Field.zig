@@ -1,9 +1,4 @@
 const std = @import("std");
-const heap = std.heap;
-const allocator = heap.BrkAllocator;
-const built = @import("builtin");
-const os = built.os.tag;
-
 
 pub const Name = struct {
     first_name: []const u8,
