@@ -1,4 +1,6 @@
 const std = @import("std");
+const heap = std.heap;
+const allocator = heap.BrkAllocator;
 
 pub const Name = struct {
     first_name: []const u8,
