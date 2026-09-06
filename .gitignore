@@ -36,3 +36,7 @@ Zig-Work/.zig-cache/
 Zig-Work/src/root.zig
 Zig-Work/build.zig
 Zig-Work/build.zig.zon
+
+
+# extras 
+*.class
