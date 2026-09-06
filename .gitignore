@@ -40,3 +40,5 @@ Zig-Work/build.zig.zon
 
 # extras 
 *.class
+saved.txt
+Profile.txt
