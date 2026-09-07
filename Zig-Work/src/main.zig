@@ -1,17 +1,12 @@
 const std = @import("std");
 const Field = @import("Field.zig");
 
-pub fn main(init: std.process.Init) !void {
-    _ = init;
+pub fn main() !void {
+    var jupiter: Field.Quasar.Temperature = .{};
+    jupiter.gravity(10, null);
 
-    var name: Field.Name = .{
-        .first_name = "Sarthak",
-        .last_name = "Thapa",
-    };
-
-    Field.Name.NameUtlis.middle_name(&name, "Kumar");
-    Field.Name.NameUtlis.middle_name(&name, null);
-
-
-    
+    var coordinate: Field.Quasar = .{};
+    coordinate.displacement(5, 2, 22, null, .small);
+    coordinate.displacement(5, 2, 22, null, .medium);
+    coordinate.displacement(5, 2, 22, null, .large);
 }
