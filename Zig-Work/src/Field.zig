@@ -1,5 +1,4 @@
 const std = @import("std");
-const Field = @import("main.zig");
 
 const Tailor = struct {
     pub const InsideTailor = struct {
@@ -13,15 +12,19 @@ const Tailor = struct {
 
 pub fn main(init: std.process.Init) !void {
     _ = init;
-
-    var outer: Field.Outer = .{};
-
-    var tester: Field.Outer.Inner = .{
-        .outer = &outer,
-    };
-    std.debug.print("Tester value {d} before init. \n", .{try tester.returnValue()});
-
-    tester.init(12, .Large);
-
-    std.debug.print("Tester value {d}. \n", .{try tester.returnValue()});
 }
+
+// A struct groups related values into one custom type.
+const Player = struct {
+    name: []const u8,
+    score: u32,
+
+    // Functions declared inside a struct are methods.
+    fn addPoints(self: *Player, points: u32) void {
+        self.score += points;
+    }
+
+    fn print(self: Player) void {
+        std.debug.print("{s} has {d} points\n", .{ self.name, self.score });
+    }
+};
