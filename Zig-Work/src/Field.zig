@@ -1,6 +1,16 @@
 const std = @import("std");
 const Field = @import("main.zig");
 
+const Tailor = struct {
+    pub const InsideTailor = struct {
+        pub const InsideAnotherTailor = struct {
+            fn print() void {
+                std.debug.print("Caller of the night", .{});
+            }
+        };
+    };
+};
+
 pub fn main(init: std.process.Init) !void {
     _ = init;
 
