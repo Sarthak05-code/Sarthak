@@ -1,17 +1,27 @@
 const std = @import("std");
-const Field = @import("main.zig");
 
-pub fn main(init: std.process.Init) !void {
-    _ = init;
+// A struct groups related values into one custom type.
+const Player = struct {
+    name: []const u8,
+    score: u32,
 
-    var outer: Field.Outer = .{};
+    // Functions declared inside a struct are methods.
+    fn addPoints(self: *Player, points: u32) void {
+        self.score += points;
+    }
 
-    var tester: Field.Outer.Inner = .{
-        .outer = &outer,
+    fn print(self: Player) void {
+        std.debug.print("{s} has {d} points\n", .{ self.name, self.score });
+    }
+};
+
+pub fn main() void {
+    // Create a value by supplying each struct field.
+    var player = Player{
+        .name = "Sarthak",
+        .score = 10,
     };
-    std.debug.print("Tester value {d} before init. \n", .{try tester.returnValue()});
 
-    tester.init(12, .Large);
-
-    std.debug.print("Tester value {d}. \n", .{try tester.returnValue()});
+    player.addPoints(5);
+    player.print(); // Prints: Sarthak has 15 points
 }
