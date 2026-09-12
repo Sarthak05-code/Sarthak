@@ -1,30 +1,28 @@
 const std = @import("std");
+const built = @import("builtin");
+
+const os = built.os.tag;
 
 const Tailor = struct {
     pub const InsideTailor = struct {
         pub const InsideAnotherTailor = struct {
-            fn print() void {
+            pub fn printer() void {
                 std.debug.print("Caller of the night", .{});
             }
         };
     };
 };
 
+const Os = enum {
+    Windows,
+    Macos,
+    Linux,
+};
+
 pub fn main(init: std.process.Init) !void {
     _ = init;
+    Tailor.InsideTailor.InsideAnotherTailor.printer();
+    std.debug.print("\nThe current os you are using is : {s}\n", .{if (os == .windows) "Window" else "Unknown"});
+    const name = Os.Windows;
+    std.debug.print("{}", .{name});
 }
-
-// A struct groups related values into one custom type.
-const Player = struct {
-    name: []const u8,
-    score: u32,
-
-    // Functions declared inside a struct are methods.
-    fn addPoints(self: *Player, points: u32) void {
-        self.score += points;
-    }
-
-    fn print(self: Player) void {
-        std.debug.print("{s} has {d} points\n", .{ self.name, self.score });
-    }
-};
