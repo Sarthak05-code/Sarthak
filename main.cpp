@@ -1,66 +1,24 @@
+#include <cstdint>
+#include <iomanip>
 #include <iostream>
+typedef uint64_t i64;
 
-#include <variant>
-#include <vector>
-
-using namespace std;
-
-variant<string> name = "Sarthak";
-
-template <typename T> void print(T value) { cout << value << "\n"; }
-
-void bubbleSort(vector<int> &numbers, int method = 1) {
-  // 1 => ascending order
-  // 0 => descending order
-
-  if (method != 1 && method != 0) {
-    cout << "Error, in sorting format, pick 1 or 0 only.\n";
-    return;
+int returnValue(int number_one, int number_two, int value = 1) {
+  if (value != 1 && value != 0) {
+    std::cout << "The number you entered wasn't a proper value" << "\n";
+    return 1;
   }
-
-  int length = numbers.size();
-
-  for (int i = 0; i < length - 1; ++i) {
-
-    for (int j = 0; j < length - i - 1; ++j) {
-
-      if (method == 1) {
-        // Ascending
-        if (numbers[j] > numbers[j + 1]) {
-          int temp = numbers[j];
-          numbers[j] = numbers[j + 1];
-          numbers[j + 1] = temp;
-        }
-      } else {
-        // Descending
-        if (numbers[j] < numbers[j + 1]) {
-          int temp = numbers[j];
-          numbers[j] = numbers[j + 1];
-          numbers[j + 1] = temp;
-        }
-      }
-    }
-  }
+  if (value == 1)
+    return number_one > number_two ? number_one : number_one;
+  return number_one > number_two ? number_two : number_one;
 }
 
+template <typename T> T findArea(T a, T b) { return a * b; }
+
 int main() {
-  vector<int> number = {1, 4, 2, 6, 10, 12, 4, 55, 12};
-
-  bubbleSort(number);
-  for (int num : number) {
-    cout << num << "\t";
-  }
-  cout << "\n";
-  bubbleSort(number, 0);
-  for (int num : number) {
-    cout << num << "\t";
-  }
-
-  print(10);
-  print(10.0);
-  print(true);
-  print('c');
-  print("string");
+  int num = 10, ber = 20;
+  std::cout << "The number is : " << returnValue(num, ber);
+  std::cout << "The number is : " << returnValue(num, ber, 1);
 
   return 0;
 }
