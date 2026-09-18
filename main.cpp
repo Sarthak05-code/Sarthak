@@ -1,7 +1,6 @@
 #include "types.hpp"
-
-#include <cstddef>
 #include <iostream>
+#include <string>
 #include <vector>
 
 using namespace std;
@@ -9,24 +8,20 @@ using namespace std;
 constexpr int numbers = 10;
 
 int main(void) {
+  Cache cache;
+  cache.setData("Sarthak", 20, {1, 2, 3, 4, 5, 6});
+  cache.display();
 
-  float a = 10.0, b = 22.0;
-  float result = returnNumber(a, b);
-  cout << "The result is : " << result << endl;
-  vector<int> characters = {96, 98, 123, 234, 121, 55, 77, 86, 33, 50};
+  vector<int> data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  vector<char> chars = {'1', '2', '3', '4', '5'};
+  vector<string> names = {"Sarthak", "Sagar", "Aayush", "Ayush"};
 
-  for (int character : characters) {
-    cout << character << "\t | \t" << namecaller(character) << "\n";
-  }
   cout << "\n";
-
-  string name = "Sarthak Thapa";
-  int length = name.length();
-
-  for (size_t i = 0; i < length; ++i) {
-    cout << name[i] << "\t|\t" << static_cast<int>(name[i])
-         << "\n"; // (int)name[i] older version of typecasting;
-  }
+  displayVector(data);
+  cout << "\n";
+  displayVector(chars);
+  cout << "\n";
+  displayVector(names);
 
   return 0;
 }
