@@ -1,4 +1,6 @@
 const std = @import("std");
+const SHA = "cf24fe1dc6ff0be09ee1279ece2209f9bb2b4f38";
+
 
 pub const DPS = struct {
     base_attack: i32,
@@ -21,7 +23,7 @@ pub const DPS = struct {
     }
 
     pub fn displayStats(self: DPS) void {
-        std.debug.print("{} {} {} {}\n", .{
+        std.debug.print("Attack : {} | Defence : {} | CritRate :  {}% | CritDamage : {}%\n", .{
             self.base_attack,
             self.defence,
             self.crit_rate,
