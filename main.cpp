@@ -13,13 +13,13 @@ int main(void) {
   cache.display();
 
   vector<int> data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  vector<char> chars = {'1', '2', '3', '4', '5'};
+  vector<char> chars = {'a', 'b', 'c', 'd', 'e'};
   vector<string> names = {"Sarthak", "Sagar", "Aayush", "Ayush"};
 
   cout << "\n";
   displayVector(data);
   cout << "\n";
-  displayVector(chars);
+  displayVector(chars, true);
   cout << "\n";
   displayVector(names);
 
