@@ -1,108 +1,39 @@
 const std = @import("std");
 
-const Invalid = error{ EmptyValues, InvalidUserLogin, SamePassword };
+pub const DPS = struct {
+    base_attack: i32,
+    defence: i32,
+    crit_rate: f32,
+    crit_damage: f32,
 
-var ID: i32 = 100;
+    pub fn init(
+        base_attack: ?i32,
+        defence: ?i32,
+        crit_rate: ?f32,
+        crit_damage: ?f32,
+    ) DPS {
+        return .{
+            .base_attack = base_attack orelse 1000,
+            .defence = defence orelse 500,
+            .crit_rate = crit_rate orelse 5.0,
+            .crit_damage = crit_damage orelse 50.0,
+        };
+    }
 
-const Register = struct {
-    username: []const u8,
-    password: []const u8,
-    email: []const u8,
-    client_id: i32,
+    pub fn displayStats(self: DPS) void {
+        std.debug.print("{} {} {} {}\n", .{
+            self.base_attack,
+            self.defence,
+            self.crit_rate,
+            self.crit_damage,
+        });
+    }
 };
 
-const Login = struct {
-    email: []const u8,
-    password: []const u8,
-};
+pub fn main(init: std.process.Init) !void {
+    _ = init;
 
-fn createUser(
-    username: ?[]const u8,
-    password: []const u8,
-    email: []const u8,
-) Invalid!Register {
-    const set_username = username orelse "defaultuser123";
+    const dps = DPS.init(1200, null, 17.0, 99.0);
 
-    if (password.len == 0 or email.len == 0)
-        return Invalid.EmptyValues;
-
-    const user = Register{
-        .client_id = ID,
-        .username = set_username,
-        .password = password,
-        .email = email,
-    };
-
-    ID += 1;
-
-    return user;
-}
-
-fn showUser(users: []const Register, client_id: i32) Invalid!Login {
-    for (users) |user| {
-        if (user.client_id == client_id) {
-            return .{
-                .email = user.email,
-                .password = user.password,
-            };
-        }
-    }
-
-    return Invalid.InvalidUserLogin;
-}
-
-fn changePassword(
-    new_password: []const u8,
-    client_id: i32,
-    users: []Register,
-) !void {
-    if (new_password.len == 0) {
-        return Invalid.EmptyValues;
-    }
-
-    for (users) |*user| {
-        if (user.client_id == client_id) {
-            if (std.mem.eql(u8, user.password, new_password)) {
-                return Invalid.SamePassword;
-            }
-
-            user.password = new_password;
-            return;
-        }
-    }
-
-    return Invalid.InvalidUserLogin;
-}
-
-pub fn main() !void {
-    var users: [3]Register = undefined;
-
-    users[0] = try createUser(
-        "Sarthak",
-        "pass123",
-        "sarthak@example.com",
-    );
-
-    users[1] = try createUser(
-        "Alice",
-        "alice123",
-        "alice@example.com",
-    );
-
-    users[2] = try createUser(
-        "Bob",
-        "bob123",
-        "bob@example.com",
-    );
-
-    const login = try showUser(users[0..], 101);
-
-    std.debug.print(
-        "Email: {s}\nPassword: {s}\n",
-        .{ login.email, login.password },
-    );
-
-    try changePassword("bobber123", 102, &users);
-    const bob_login = try showUser(users[0..], 102);
-    std.debug.print("Email : {s} | Password : {s}\n", .{ bob_login.email, bob_login.password });
+    dps.displayStats();
 }
