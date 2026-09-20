@@ -2,53 +2,39 @@ const std = @import("std");
 
 const ArrayList = std.ArrayList;
 
+pub const LimitTest = enum { Minor, Major, Viral };
 
+pub const LoadBalancer = struct {
+    children: i32 = 1, // have atleast 1 kid ready.
 
-pub fn StructFallBack() type {
-    return struct {
-        arena: std.heap.ArenaAllocator,
-
-        pub fn init() @This() {
-            return .{
-                .arena = std.heap.ArenaAllocator.init(std.heap.page_allocator),
-            };
+    pub fn syncLimitTest(self: *LoadBalancer, size: LimitTest) void {
+        switch (size) {
+            .Minor => self.children = 1,
+            .Major => self.children = 4,
+            .Viral => self.children = 10, // assume all of a sudden a million people join, so viral has more than major.
         }
+    }
 
-        pub fn Values(self: *@This()) void {
-            const allocator = self.arena.allocator();
+    pub fn addTraffic(self: *LoadBalancer, visitors: ?i64) i32 {
+        const users = visitors orelse 100; // default to understand we have about 100 users.
 
-            _ = allocator;
+        const limit: LimitTest = switch (users) {
+            0...100 => .Minor,
+            101...1000 => .Major,
+            else => .Viral,
+        };
 
-            std.debug.print("The values are initialized here.\n", .{});
-        }
+        self.syncLimitTest(limit);
 
-        pub fn deinit(self: *@This()) void {
-            std.debug.print("The value was freed here.\n", .{});
-            self.arena.deinit();
-        }
-    };
-}
+        return self.children;
+    }
+};
 
 pub fn main(init: std.process.Init) !void {
     _ = init;
 
-    const gpa = std.heap.page_allocator;
-    var values: ArrayList(f32) = .empty;
-    defer values.deinit(gpa);
-
-    try values.append(gpa, 12.34);
-    try values.append(gpa, 122.343);
-    try values.append(gpa, 1222.3422);
-    var i: usize = 0;
-    for (values.items) |value| {
-        std.debug.print("{}. {}\n", .{ i + 1, value });
-        i += 1;
-    }
-
-    const CallStruct = StructFallBack();
-
-    var data = CallStruct.init();
-    defer data.deinit();
-
-    data.Values();
+    var ld: LoadBalancer = .{};
+    std.debug.print("Childern current: {}\n", .{ld.children});
+    const kids = ld.addTraffic(null);
+    std.debug.print("Load Test : {any}\n", .{kids});
 }
