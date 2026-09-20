@@ -5,7 +5,6 @@
 #include <type_traits>
 #include <vector>
 
-
 using namespace std;
 template <typename T> T returnNumber(const T &a, const T &b) { return a + b; }
 
@@ -47,4 +46,10 @@ public:
     displayVector(data);
     cout << "\n";
   }
+
+  string getName() { return name; }
+
+  int getAge() { return age; }
+
+  
 };

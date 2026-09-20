@@ -23,5 +23,8 @@ int main(void) {
   cout << "\n";
   displayVector(names);
 
+  cout << cache.getAge() << endl;
+  cout << cache.getName() << endl;
+
   return 0;
 }
