@@ -2,37 +2,53 @@ const std = @import("std");
 
 const ArrayList = std.ArrayList;
 
+
+
+pub fn StructFallBack() type {
+    return struct {
+        arena: std.heap.ArenaAllocator,
+
+        pub fn init() @This() {
+            return .{
+                .arena = std.heap.ArenaAllocator.init(std.heap.page_allocator),
+            };
+        }
+
+        pub fn Values(self: *@This()) void {
+            const allocator = self.arena.allocator();
+
+            _ = allocator;
+
+            std.debug.print("The values are initialized here.\n", .{});
+        }
+
+        pub fn deinit(self: *@This()) void {
+            std.debug.print("The value was freed here.\n", .{});
+            self.arena.deinit();
+        }
+    };
+}
+
 pub fn main(init: std.process.Init) !void {
     _ = init;
 
-    const page_allocator = std.heap.page_allocator;
+    const gpa = std.heap.page_allocator;
+    var values: ArrayList(f32) = .empty;
+    defer values.deinit(gpa);
 
-    // Directly using page_allocator
-    var list: ArrayList(u8) = .empty;
-    defer list.deinit(page_allocator);
+    try values.append(gpa, 12.34);
+    try values.append(gpa, 122.343);
+    try values.append(gpa, 1222.3422);
+    var i: usize = 0;
+    for (values.items) |value| {
+        std.debug.print("{}. {}\n", .{ i + 1, value });
+        i += 1;
+    }
 
-    try list.append(page_allocator, 'H');
-    try list.append(page_allocator, 'i');
+    const CallStruct = StructFallBack();
 
-    std.debug.print(
-        "The value in the list is: {s}\n",
-        .{list.items},
-    );
+    var data = CallStruct.init();
+    defer data.deinit();
 
-    // Arena uses page_allocator underneath
-    var arena = std.heap.ArenaAllocator.init(page_allocator);
-    defer arena.deinit();
-
-    const allocator = arena.allocator();
-
-    var lists: ArrayList(i32) = .empty;
-
-    try lists.append(allocator, 12);
-    try lists.append(allocator, 13);
-    try lists.append(allocator, 14);
-
-    std.debug.print(
-        "The values in the array are: {any}\n",
-        .{lists.items},
-    );
+    data.Values();
 }
