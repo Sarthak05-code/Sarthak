@@ -1,32 +1,44 @@
 const std = @import("std");
 
-const ArrayList = std.ArrayList;
-
-pub const LimitTest = enum { Minor, Major, Viral };
+pub const LimitTest = enum { Minor, Major, Viral, Universal };
 
 pub const LoadBalancer = struct {
-    children: i32 = 1, // have atleast 1 kid ready.
+    children: u32 = 1,
+    const max_attendance: u64 = 1000;
 
     pub fn syncLimitTest(self: *LoadBalancer, size: LimitTest) void {
-        switch (size) {
-            .Minor => self.children = 1,
-            .Major => self.children = 4,
-            .Viral => self.children = 10, // assume all of a sudden a million people join, so viral has more than major.
-        }
+        self.children = switch (size) {
+            .Minor => 1,
+            .Major => 4,
+            .Viral => 10,
+            .Universal => 25,
+        };
     }
 
-    pub fn addTraffic(self: *LoadBalancer, visitors: ?i64) i32 {
-        const users = visitors orelse 100; // default to understand we have about 100 users.
+    pub fn addTraffic(self: *LoadBalancer, visitors: ?u64) void {
+        const users = visitors orelse 100;
 
         const limit: LimitTest = switch (users) {
             0...100 => .Minor,
             101...1000 => .Major,
-            else => .Viral,
+            1001...10_000 => .Viral,
+            else => .Universal,
         };
 
+        // 1. Set the base children tier first
         self.syncLimitTest(limit);
 
-        return self.children;
+        // 2. Safely calculate overflow without underflowing
+        if (users > max_attendance) {
+            const overflow = users - max_attendance;
+            self.createAdditionalBalancer(overflow);
+        }
+    }
+
+    pub fn createAdditionalBalancer(self: *LoadBalancer, overflow_users: u64) void {
+        // Direct O(1) integer division replacing the unsafe loop
+        const extra_kids = @as(u32, @intCast(overflow_users / 1000));
+        self.children += extra_kids;
     }
 };
 
@@ -34,7 +46,18 @@ pub fn main(init: std.process.Init) !void {
     _ = init;
 
     var ld: LoadBalancer = .{};
-    std.debug.print("Childern current: {}\n", .{ld.children});
-    const kids = ld.addTraffic(null);
-    std.debug.print("Load Test : {any}\n", .{kids});
+
+    // 1. Default (100 visitors) -> Minor tier -> 1 child
+    ld.addTraffic(null);
+    std.debug.print("Default (100 visitors) -> Children: {}\n", .{ld.children});
+
+    // 2. 500 visitors -> Major tier -> 4 children
+    ld.addTraffic(500);
+    std.debug.print("500 visitors -> Children: {}\n", .{ld.children});
+
+    // 3. 1,000,000 visitors -> Universal base (25) + Overflow extra (999) -> 1024 children
+    ld.addTraffic(1_000_000);
+    std.debug.print("1,000,000 visitors -> Children: {}\n", .{ld.children});
 }
+
+
