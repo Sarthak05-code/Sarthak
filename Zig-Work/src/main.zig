@@ -4,6 +4,7 @@ pub const LimitTest = enum { Minor, Major, Viral, Universal };
 
 pub const LoadBalancer = struct {
     children: u32 = 1,
+    pressureState: bool = false,
     const max_attendance: u64 = 1000;
 
     pub fn syncLimitTest(self: *LoadBalancer, size: LimitTest) void {
@@ -17,6 +18,7 @@ pub const LoadBalancer = struct {
 
     pub fn addTraffic(self: *LoadBalancer, visitors: ?u64) void {
         const users = visitors orelse 100;
+        self.panicCrash(users);
 
         const limit: LimitTest = switch (users) {
             0...100 => .Minor,
@@ -25,39 +27,47 @@ pub const LoadBalancer = struct {
             else => .Universal,
         };
 
-        // 1. Set the base children tier first
-        self.syncLimitTest(limit);
-
-        // 2. Safely calculate overflow without underflowing
-        if (users > max_attendance) {
-            const overflow = users - max_attendance;
-            self.createAdditionalBalancer(overflow);
+        if (self.pressureState) {
+            self.syncLimitTest(.Minor);
+        } else {
+            self.syncLimitTest(limit);
+            if (users > max_attendance) {
+                const overflow = users - max_attendance;
+                self.createAdditionalBalancer(overflow);
+            }
         }
     }
 
     pub fn createAdditionalBalancer(self: *LoadBalancer, overflow_users: u64) void {
-        // Direct O(1) integer division replacing the unsafe loop
         const extra_kids = @as(u32, @intCast(overflow_users / 1000));
         self.children += extra_kids;
     }
+
+    /// Deliberately locks children at 1 to simulate high pressure under test
+    pub fn pressureLoadBalancer(self: *LoadBalancer, pressure: ?bool) void {
+        self.pressureState = pressure orelse false;
+    }
+
+    pub fn panicCrash(self: LoadBalancer, users: u64) void {
+        // Triggers a panic with a full stack trace if pressure mode is active
+        // and incoming traffic exceeds capacity.
+        if (self.pressureState and users > max_attendance) {
+            @panic("Fatal error! Load balancer unable to handle traffic under pressure state.");
+        }
+    }
 };
 
-pub fn main(init: std.process.Init) !void {
-    _ = init;
-
+pub fn main() !void {
     var ld: LoadBalancer = .{};
 
     // 1. Default (100 visitors) -> Minor tier -> 1 child
     ld.addTraffic(null);
     std.debug.print("Default (100 visitors) -> Children: {}\n", .{ld.children});
 
-    // 2. 500 visitors -> Major tier -> 4 children
     ld.addTraffic(500);
     std.debug.print("500 visitors -> Children: {}\n", .{ld.children});
 
-    // 3. 1,000,000 visitors -> Universal base (25) + Overflow extra (999) -> 1024 children
-    ld.addTraffic(1_000_000);
-    std.debug.print("1,000,000 visitors -> Children: {}\n", .{ld.children});
+    ld.pressureLoadBalancer(true);
+    ld.addTraffic(69420);
+    std.debug.print("69420 visitors -> Children: {} (locked at 1 due to pressure mode)\n", .{ld.children});
 }
-
-
