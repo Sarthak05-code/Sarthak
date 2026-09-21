@@ -18,7 +18,6 @@ pub const LoadBalancer = struct {
 
     pub fn addTraffic(self: *LoadBalancer, visitors: ?u64) void {
         const users = visitors orelse 100;
-        self.panicCrash(users);
 
         const limit: LimitTest = switch (users) {
             0...100 => .Minor,
@@ -29,6 +28,7 @@ pub const LoadBalancer = struct {
 
         if (self.pressureState) {
             self.syncLimitTest(.Minor);
+            self.panicCrash(users);
         } else {
             self.syncLimitTest(limit);
             if (users > max_attendance) {
@@ -39,7 +39,7 @@ pub const LoadBalancer = struct {
     }
 
     pub fn createAdditionalBalancer(self: *LoadBalancer, overflow_users: u64) void {
-        const extra_kids = @as(u32, @intCast(overflow_users / 1000));
+        const extra_kids: u32 = @intCast(@divFloor(overflow_users + 999, 1000));
         self.children += extra_kids;
     }
 
@@ -48,7 +48,7 @@ pub const LoadBalancer = struct {
         self.pressureState = pressure orelse false;
     }
 
-    pub fn panicCrash(self: LoadBalancer, users: u64) void {
+    pub fn panicCrash(self: *const LoadBalancer, users: u64) void {
         // Triggers a panic with a full stack trace if pressure mode is active
         // and incoming traffic exceeds capacity.
         if (self.pressureState and users > max_attendance) {
