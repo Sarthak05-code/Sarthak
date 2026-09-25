@@ -1,30 +1,63 @@
-#include "types.hpp"
-#include <iostream>
-#include <string>
-#include <vector>
 
+#include <iostream>
 using namespace std;
 
-constexpr int numbers = 10;
+int TOP = 0;
+int length[5];
+// integer stack for now.
+class Stack {
 
-int main(void) {
-  Cache cache;
-  cache.setData("Sarthak", 20, {1, 2, 3, 4, 5, 6});
-  cache.display();
+public:
+  void push(int value) {
+    if (TOP < 5) {
+      TOP++;
+      length[TOP] = value;
+    } else {
+      cout << "Stack Overflow" << "\n";
+    }
+  }
 
-  vector<int> data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  vector<char> chars = {'a', 'b', 'c', 'd', 'e'};
-  vector<string> names = {"Sarthak", "Sagar", "Aayush", "Ayush"};
+  void pop() {
+    if (TOP > 0) {
+      TOP--;
+    }
+  }
 
+  // for context, i named it release.
+  void release() {
+    for (auto i = 0; i < TOP; ++i) {
+      cout << length[i] << "\n";
+    }
+  }
+
+  void top() {
+
+    if (TOP > 0) {
+      cout << length[TOP - 1];
+    }
+  }
+};
+
+int main() {
+  Stack stack;
+  stack.push(10);
+  stack.push(20);
+  stack.push(30);
+  stack.push(40);
+  stack.push(50);
+  stack.push(60);
+  stack.push(60);
+  stack.push(60);
+  stack.push(60);
+  stack.push(60);
+  stack.push(60);
+  stack.push(60);
+  stack.push(100);
   cout << "\n";
-  displayVector(data);
-  cout << "\n";
-  displayVector(chars, true);
-  cout << "\n";
-  displayVector(names);
+  stack.release();
 
-  cout << cache.getAge() << endl;
-  cout << cache.getName() << endl;
+  cout << "The top of the stack is : " << endl;
+  stack.top();
 
   return 0;
 }
