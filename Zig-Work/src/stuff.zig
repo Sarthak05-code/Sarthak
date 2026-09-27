@@ -1,30 +1,27 @@
 const std = @import("std");
-const Io = std.Io;
+
 
 pub fn main(init: std.process.Init) !void {
-    const gpa = init.gpa;
-    const io = init.io;
-    _ = gpa;
+    _ = init;
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
 
-    var group: std.Io.Group = .init;
-    defer group.cancel(io);
+    var list: std.ArrayList(i32) = .empty;
+    defer list.deinit(allocator);
 
-    std.debug.print("Spawing parallel workers : [n", .{});
-    var i: usize = 0;
-    while (i < 3) : (i += 1) {
-        group.async(io, workerTask, .{ io, i });
-    }
+    try list.append(allocator, 21);
+    try list.append(allocator, 212);
+    try list.append(allocator, 2121);
+    try list.append(allocator, 212121);
 
-    std.debug.print("All task spawned. Waiting for the group completion...\n", .{});
+    var names: std.ArrayList(u8) = .empty;
+    defer names.deinit(allocator);
+    try names.appendSlice(allocator, "Sarthak");
+    try names.appendSlice(allocator, " Thapa");
+    try names.appendSlice(allocator, " is");
+    try names.appendSlice(allocator, " my name.");
 
-    try group.await(io);
-    std.debug.print("All works done.\n", .{});
-}
-
-fn workerTask(io: Io, id: usize) void {
-    std.debug.print("Worker : {d} started\n", .{id});
-
-    io.sleep(.fromSeconds(1), .awake) catch {};
-
-    std.debug.print("Worker {d} finished.\n", .{id});
+    std.debug.print("The values are : {any}\n", .{list.items});
+    std.debug.print("The string values are : {s}\n", .{names.items});
 }
