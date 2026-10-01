@@ -3,6 +3,7 @@ const std = @import("std");
 var isThere: ?bool = null;
 var name : ?[]const u8 = "Sarthak";
 var number : ?i32 = 55;
+var array: [4]i32 = .{1,2,3,4};
 
 pub fn main(init: std.process.Init) !void {
     _ = init;
@@ -46,4 +47,6 @@ pub fn main(init: std.process.Init) !void {
     } else {
         std.debug.print("No number. \n", .{});
     }
+
+    std.debug.print("The numbers : {any}\n", .{array});
 }
