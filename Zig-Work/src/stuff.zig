@@ -1,88 +1,144 @@
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
-var isThere: ?bool = null;
-var name: ?[]const u8 = "Sarthak";
-var number: ?i32 = 55;
-var array: [4]i32 = .{ 1, 2, 3, 4 };
+const ones = [_][]const u8{
+    "",
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven",
+    "Eight",
+    "Nine",
+};
 
-pub fn main(init: std.process.Init) !void {
-    _ = init;
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
+const teens = [_][]const u8{
+    "Ten",
+    "Eleven",
+    "Twelve",
+    "Thirteen",
+    "Fourteen",
+    "Fifteen",
+    "Sixteen",
+    "Seventeen",
+    "Eighteen",
+    "Nineteen",
+};
 
-    var list: std.ArrayList(i32) = .empty;
-    defer list.deinit(allocator);
+const tens = [_][]const u8{
+    "",
+    "",
+    "Twenty",
+    "Thirty",
+    "Forty",
+    "Fifty",
+    "Sixty",
+    "Seventy",
+    "Eighty",
+    "Ninety",
+};
 
-    try list.append(allocator, 21);
-    try list.append(allocator, 212);
-    try list.append(allocator, 2121);
-    try list.append(allocator, 212121);
+const thousands = [_][]const u8{
+    "",
+    "Thousand",
+    "Million",
+    "Billion",
+    "Trillion",
+    "Quadrillion",
+    "Quintillion",
+};
 
-    var names: std.ArrayList(u8) = .empty;
-    defer names.deinit(allocator);
-    try names.appendSlice(allocator, "Sarthak");
-    try names.appendSlice(allocator, " Thapa");
-    try names.appendSlice(allocator, " is");
-    try names.appendSlice(allocator, " my name.");
-
-    std.debug.print("The values are : {any}\n", .{list.items});
-    std.debug.print("The string values are : {s}\n", .{names.items});
-
-    isThere = true;
-    if (isThere.?) {
-        std.debug.print("Someone is there: \n", .{});
+fn helper(
+    allocator: Allocator,
+    n: u64,
+    list: *std.ArrayList([]const u8),
+) !void {
+    if (n == 0) {
+        return;
+    } else if (n < 10) {
+        try list.append(allocator, ones[n]);
+    } else if (n < 20) {
+        try list.append(allocator, teens[n - 10]);
+    } else if (n < 100) {
+        try list.append(allocator, tens[n / 10]);
+        try helper(allocator, n % 10, list);
     } else {
-        std.debug.print("No one is there. \n", .{});
+        try list.append(allocator, ones[n / 100]);
+        try list.append(allocator, "Hundred");
+        try helper(allocator, n % 100, list);
     }
-
-    if (name) |present| {
-        std.debug.print("Hello {s}\n", .{present});
-    } else {
-        std.debug.print("Hello, Stranger.\n", .{});
-    }
-
-    if (number) |_| {
-        std.debug.print("The number is {any}\n", .{number});
-    } else {
-        std.debug.print("No number. \n", .{});
-    }
-
-    std.debug.print("The numbers : {any}\n", .{array});
-
-    try EOF();
 }
 
-fn ReturnAlpha(value: i32) ![]const u8 {
-    return switch (value) {
-        1 => "One",
-        2 => "Two",
-        3 => "Three",
-        4 => "Four",
-        5 => "Five",
-        6 => "Six",
-        7 => "Seven",
-        8 => "Eight",
-        9 => "Nine",
-        0 => "Zero",
-        else => "Unkown",
+fn numberToWords(allocator: Allocator, num: u64) ![]const u8 {
+    if (num == 0) {
+        return try allocator.dupe(u8, "Zero");
+    }
+
+    var final_tokens: std.ArrayList([]const u8) = .empty;
+    defer final_tokens.deinit(allocator);
+
+    var temp_num = num;
+    var chunk_index: usize = 0;
+
+    while (temp_num > 0) : (chunk_index += 1) {
+        const chunk = temp_num % 1000;
+
+        if (chunk != 0) {
+            var chunk_tokens: std.ArrayList([]const u8) = .empty;
+            defer chunk_tokens.deinit(allocator);
+
+            try helper(allocator, chunk, &chunk_tokens);
+
+            if (chunk_index > 0) {
+                try chunk_tokens.append(
+                    allocator,
+                    thousands[chunk_index],
+                );
+            }
+
+            try final_tokens.insertSlice(
+                allocator,
+                0,
+                chunk_tokens.items,
+            );
+        }
+
+        temp_num /= 1000;
+    }
+
+    return try std.mem.join(
+        allocator,
+        " ",
+        final_tokens.items,
+    );
+}
+
+pub fn main() !void {
+    var arena: std.heap.ArenaAllocator =
+        .init(std.heap.page_allocator);
+    defer arena.deinit();
+
+    const allocator = arena.allocator();
+
+    const test_cases = [_]u64{
+        1,
+        25,
+        456,
+        123456,
+        987654321,
     };
-}
 
-fn EOF() !void {
-    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    defer arena.deinit();
+    for (test_cases) |val| {
+        const word_str = try numberToWords(
+            allocator,
+            val,
+        );
 
-    const allocator = arena.allocator();
-
-    var Variables: std.ArrayList(i32) = .empty;
-    defer Variables.deinit(allocator);
-
-    try Variables.append(allocator, 1);
-    try Variables.append(allocator, 10);
-    try Variables.append(allocator, 0);
-
-    for (Variables.items) |variable| {
-        std.debug.print("{d} -> {s} \n", .{ variable, try ReturnAlpha(variable) });
+        std.debug.print(
+            "{d: <10} => {s}\n",
+            .{ val, word_str },
+        );
     }
 }
