@@ -18,7 +18,7 @@ const std = @import("std");
 /// Prefer `std.ascii.whitespace` as it is more complete than a manual list.
 const whitespace = std.ascii.whitespace;
 
-/// Vowel character use by the isVowel helper.
+/// Vowel characters used by the isVowel helper.
 const vowels = "aeiouAEIOU";
 
 /// Returns a sub-slice of `text` with leading and trailing whitespace removed.
@@ -76,7 +76,7 @@ pub fn isVowel(char: u8) bool {
     return std.mem.findScalar(u8, vowels, char) != null;
 }
 
-// tesing the function and their output are as expected.
+// Testing the function to ensure the output is as expected.
 test "isVowel returns true for vowels" {
     try std.testing.expect(isVowel('a'));
     try std.testing.expect(isVowel('E'));
@@ -85,7 +85,7 @@ test "isVowel returns true for vowels" {
     try std.testing.expect(isVowel('u'));
 }
 
-// testing some function and if the output are correct.
+// Testing the function to ensure the output is correct.
 test "isVowel returns false for consonants" {
     try std.testing.expect(!isVowel('b'));
     try std.testing.expect(!isVowel('Z'));
@@ -94,8 +94,12 @@ test "isVowel returns false for consonants" {
     try std.testing.expect(!isVowel('1'));
 }
 
-// Java shows an error when 200 == 200 , testing the same for zig.
-// Update = zig shows test passed , hence 200 == 200 = true
-test "200 == 200" {
-    try std.testing.expectEqual(true, 200 == 200);
+test "containsG works with integer" {
+    const nums = [_]i32{ 1, 2, 3, 4, 5, 6 };
+    const needle = [_]i32{ 3, 4 };
+    const outside = [_]i32{10, 100};
+
+    try std.testing.expect(containsG(i32, &nums, &needle));
+    
+    try std.testing.expect(!containsG(i32, &nums, &outside));
 }
