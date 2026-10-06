@@ -122,13 +122,7 @@ pub fn main() !void {
 
     const allocator = arena.allocator();
 
-    const test_cases = [_]u64{
-        1,
-        25,
-        456,
-        123456,
-        987654321,
-    };
+    const test_cases = [_]u64{ 1, 25, 456, 123456, 987654321, 123 };
 
     for (test_cases) |val| {
         const word_str = try numberToWords(
@@ -142,3 +136,5 @@ pub fn main() !void {
         );
     }
 }
+
+
