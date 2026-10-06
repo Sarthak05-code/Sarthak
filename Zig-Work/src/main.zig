@@ -39,4 +39,10 @@ pub fn main(init: std.process.Init) !void {
     } else {
         std.debug.print("They dont exist. \n", .{});
     }
+
+    if (library.isVowel('s')) {
+        std.debug.print("Yes a is a vowel. ", .{});
+    } else {
+        std.debug.print("No, not an vowel", .{});
+    }
 }

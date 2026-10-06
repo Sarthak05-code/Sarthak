@@ -18,6 +18,9 @@ const std = @import("std");
 /// Prefer `std.ascii.whitespace` as it is more complete than a manual list.
 const whitespace = std.ascii.whitespace;
 
+/// Vowel character use by the isVowel helper.
+const vowels = "aeiouAEIOU";
+
 /// Returns a sub-slice of `text` with leading and trailing whitespace removed.
 /// Does not allocate.
 pub fn trim(text: []const u8) []const u8 {
@@ -68,6 +71,27 @@ pub fn containsG(comptime T: type, haystack: []const T, needle: []const T) bool 
     return std.mem.indexOf(T, haystack, needle) != null;
 }
 
+/// Returns true if `char` is an English vowel (a, e, i, o, u), case-insensitive.
+pub fn isVowel(char: u8) bool {
+    return std.mem.findScalar(u8, vowels, char) != null;
+}
 
+// tesing the function and their output are as expected.
+test "isVowel returns true for vowels" {
+    try std.testing.expect(isVowel('a'));
+    try std.testing.expect(isVowel('E'));
+    try std.testing.expect(isVowel('i'));
+    try std.testing.expect(isVowel('O'));
+    try std.testing.expect(isVowel('u'));
+}
+
+// testing some function and if the output are correct.
+test "isVowel returns false for consonants" {
+    try std.testing.expect(!isVowel('b'));
+    try std.testing.expect(!isVowel('Z'));
+    try std.testing.expect(!isVowel('x'));
+    try std.testing.expect(!isVowel(' '));
+    try std.testing.expect(!isVowel('1'));
+}
 
 
