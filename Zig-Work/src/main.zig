@@ -34,7 +34,7 @@ pub fn main(init: std.process.Init) !void {
         std.debug.print("Current Connection : {s}\n", .{if (@backingInt(Status.Error) == 404) "Error."});
     }
 
-    if (library.containsG(i32, &[_]i32{1,2,3,4,5,6}, &[_]i32{10,20})) {
+    if (library.containsG(i32, &[_]i32{ 1, 2, 3, 4, 5, 6 }, &[_]i32{ 10, 20 })) {
         std.debug.print("Values do exists in the array\n", .{});
     } else {
         std.debug.print("They dont exist. \n", .{});

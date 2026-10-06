@@ -94,4 +94,8 @@ test "isVowel returns false for consonants" {
     try std.testing.expect(!isVowel('1'));
 }
 
-
+// Java shows an error when 200 == 200 , testing the same for zig.
+// Update = zig shows test passed , hence 200 == 200 = true
+test "200 == 200" {
+    try std.testing.expectEqual(true, 200 == 200);
+}
