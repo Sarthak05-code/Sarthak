@@ -94,6 +94,7 @@ test "isVowel returns false for consonants" {
     try std.testing.expect(!isVowel('1'));
 }
 
+// Testing the function to ensure generics works for integer.
 test "containsG works with integer" {
     const nums = [_]i32{ 1, 2, 3, 4, 5, 6 };
     const needle = [_]i32{ 3, 4 };
