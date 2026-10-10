@@ -1,48 +1,15 @@
 const std = @import("std");
-const library = @import("Library.zig");
+const lib = @import("Library.zig");
 
-const Status = enum(u32) {
-    Clear = 200,
-    Forbidden = 403,
-    Error = 404,
-};
 
-// Made a Libray function to text stuffs as well as test zig 0.17.0
-pub fn main(init: std.process.Init) !void {
-    _ = init;
-    const text = "    Sarthak Thapa     ";
-    const answer = library.trim(text);
-    std.debug.print("{s}\n", .{text});
-    std.debug.print("{s}\n", .{answer});
+pub fn main() !void {
+    var buf: [256]u8 = undefined;
+    var w: std.Io.Writer = .fixed(&buf);
 
-    if (library.startsWith(text, "Sar")) {
-        std.debug.print("Correct!\n", .{});
-    } else {
-        std.debug.print("Incorrect \n", .{});
-    }
+    try lib.csv.writeRow(&w, &.{ "id", "name" });
+    try lib.csv.writeRow(&w, &.{ "1", "Sarthak, S." });
 
-    library.println("Hello, world");
+    std.debug.print("{s}", .{w.buffered()});
 
-    const server_connection: bool = false;
-    const admin: bool = false;
-
-    if (server_connection and admin) {
-        std.debug.print("Current connection : {s}\n", .{if (@backingInt(Status.Clear) == 200) "Stable"});
-    } else if (server_connection and !admin) {
-        std.debug.print("Current connection : {s}\n", .{if (@backingInt(Status.Forbidden) == 403) "Forbidden"});
-    } else {
-        std.debug.print("Current Connection : {s}\n", .{if (@backingInt(Status.Error) == 404) "Error."});
-    }
-
-    if (library.containsG(i32, &[_]i32{ 1, 2, 3, 4, 5, 6 }, &[_]i32{ 10, 20 })) {
-        std.debug.print("Values do exists in the array\n", .{});
-    } else {
-        std.debug.print("They dont exist. \n", .{});
-    }
-
-    if (library.isVowel('s')) {
-        std.debug.print("Yes a is a vowel. ", .{});
-    } else {
-        std.debug.print("No, not an vowel", .{});
-    }
+    lib.print("Hello, from the smaller printer\n" , .{});
 }

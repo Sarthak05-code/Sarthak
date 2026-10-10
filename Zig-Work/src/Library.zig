@@ -1,11 +1,11 @@
 //! Small utility library for common string and slice operations.
 //!
-//! Most text functions automatically trim leading/trailing whitespace
-//! before performing the check. The generic helpers do not.
+//! Most text functions trim leading and trailing whitespace before
+//! doing their check. The generic helpers do not.
 //!
 //! Example:
 //! ```zig
-//! const lib = @import("Library.zig");
+//! const lib = @import("Zig_Work");
 //!
 //! if (lib.contains("  hello world  ", "world")) {
 //!     lib.println("found");
@@ -14,12 +14,20 @@
 
 const std = @import("std");
 
+/// Helpers for writing CSV data. See `Csv.zig`.
+pub const csv = @import("Csv.zig");
+
 /// Whitespace characters used by the trim helpers.
-/// Prefer `std.ascii.whitespace` as it is more complete than a manual list.
 const whitespace = std.ascii.whitespace;
 
-/// Vowel characters used by the isVowel helper.
+/// Vowel characters used by `isVowel`.
 const vowels = "aeiouAEIOU";
+
+/// Short alias for `std.debug.print`.
+///
+/// Takes a format string and a tuple of arguments, and prints to stderr.
+/// Always pass the arguments tuple, even when it is empty: `print("hi\n", .{})`.
+pub const print = std.debug.print;
 
 /// Returns a sub-slice of `text` with leading and trailing whitespace removed.
 /// Does not allocate.
@@ -50,7 +58,7 @@ pub fn isBlank(text: []const u8) bool {
 /// Returns true if the trimmed `text` contains `value` as a substring.
 ///
 /// This is the convenient string-only version.
-/// For other types use `containsG`.
+/// For other types, use `containsG`.
 pub fn contains(text: []const u8, value: []const u8) bool {
     return std.mem.indexOf(u8, trim(text), value) != null;
 }
@@ -58,7 +66,8 @@ pub fn contains(text: []const u8, value: []const u8) bool {
 /// Generic version of `contains`.
 ///
 /// Returns true if `needle` appears as a contiguous sub-slice inside `haystack`.
-/// Works for any type `T` that supports equality.
+/// Works for any type `T` that supports equality comparison.
+/// Unlike `contains`, it does not trim anything.
 ///
 /// Example:
 /// ```zig
@@ -71,12 +80,13 @@ pub fn containsG(comptime T: type, haystack: []const T, needle: []const T) bool 
     return std.mem.indexOf(T, haystack, needle) != null;
 }
 
-/// Returns true if `char` is an English vowel (a, e, i, o, u), case-insensitive.
+/// Returns true if `char` is an English vowel (a, e, i, o, u).
+/// The check is case-insensitive.
 pub fn isVowel(char: u8) bool {
     return std.mem.findScalar(u8, vowels, char) != null;
 }
 
-// Testing the function to ensure the output is as expected.
+// Checks that `isVowel` returns true for vowels in both cases.
 test "isVowel returns true for vowels" {
     try std.testing.expect(isVowel('a'));
     try std.testing.expect(isVowel('E'));
@@ -85,7 +95,7 @@ test "isVowel returns true for vowels" {
     try std.testing.expect(isVowel('u'));
 }
 
-// Testing the function to ensure the output is correct.
+// Checks that `isVowel` returns false for consonants, spaces, and digits.
 test "isVowel returns false for consonants" {
     try std.testing.expect(!isVowel('b'));
     try std.testing.expect(!isVowel('Z'));
@@ -94,13 +104,17 @@ test "isVowel returns false for consonants" {
     try std.testing.expect(!isVowel('1'));
 }
 
-// Testing the function to ensure generics works for integer.
-test "containsG works with integer" {
+// Checks that `containsG` works with integers.
+test "containsG works with integers" {
     const nums = [_]i32{ 1, 2, 3, 4, 5, 6 };
     const needle = [_]i32{ 3, 4 };
-    const outside = [_]i32{10, 100};
+    const outside = [_]i32{ 10, 100 };
 
     try std.testing.expect(containsG(i32, &nums, &needle));
-    
     try std.testing.expect(!containsG(i32, &nums, &outside));
+}
+
+// Makes `zig build test` also run the tests inside `Csv.zig`.
+test {
+    _ = csv;
 }
