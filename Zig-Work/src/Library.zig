@@ -118,3 +118,45 @@ test "containsG works with integers" {
 test {
     _ = csv;
 }
+
+/// Order Traversal.
+pub const Node = struct {
+    data: i64,
+    left: ?*Node,
+    right: ?*Node,
+
+    pub fn init(allocator: std.mem.Allocator, data: i64) !*Node {
+        const newNode = try allocator.create(Node);
+
+        newNode.* = Node{
+            .data = data,
+            .left = null,
+            .right = null,
+        };
+        return newNode;
+    }
+};
+
+/// 1. Pre-order Traversal : Root -> Left -> Right
+pub fn preOrder(node: ?*Node) void {
+    const current = node orelse return; // If null. return
+    print("{d} ", .{current.data});
+    preOrder(current.left);
+    preOrder(current.right);
+}
+
+/// 2. In-order Traversal : Left -> Root -> Right
+pub fn inOrder(node: ?*Node) void {
+    const current = node orelse return;
+    inOrder(current.left);
+    print("{d} ", .{current.data});
+    inOrder(current.right);
+}
+
+/// 3. Post-order Traversal : Left -> Right -> Root
+pub fn postOrder(node: ?*Node) void {
+    const current = node orelse return;
+    postOrder(current.left);
+    postOrder(current.right);
+    print("{d} ", .{current.data});
+}
