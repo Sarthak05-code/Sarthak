@@ -160,3 +160,41 @@ pub fn postOrder(node: ?*Node) void {
     postOrder(current.right);
     print("{d} ", .{current.data});
 }
+
+/// Linear Search. Simple for now. T for generics, can be Type : int, usigned, string and float.
+pub fn linearSearch(
+    comptime T: type,
+    array: []const T,
+    needle: T,
+) bool {
+    for (array) |value| {
+        if (value == needle) return true;
+    }
+
+    return false;
+}
+
+/// Generic Binary Search. Works for any comparable number type.
+pub fn binarySearch(comptime T: type, array: []const T, needle: T) bool {
+    // Handle the empty array edge case safely right away
+    if (array.len == 0) return false;
+
+    var low: usize = 0;
+    var high: usize = array.len - 1;
+
+    while (low <= high) {
+        const mid: usize = low + (high - low) / 2;
+
+        if (array[mid] == needle) return true;
+
+        if (needle > array[mid]) {
+            low = mid + 1;
+        } else {
+            // Guard against usize underflow if mid is 0
+            if (mid == 0) break;
+            high = mid - 1;
+        }
+    }
+
+    return false;
+}
