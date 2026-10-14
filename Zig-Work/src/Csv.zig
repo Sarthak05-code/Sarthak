@@ -36,10 +36,23 @@ test "csv escaping" {
     try std.testing.expectEqualStrings("name,\"say \"\"hi\"\"\",\"a,b\"\r\n", w.buffered());
 }
 
-
 test "newline in field is quoted" {
     var buf: [64]u8 = undefined;
     var w: std.Io.Writer = .fixed(&buf);
     try writeRow(&w, &.{ "a\nb", "c" });
     try std.testing.expectEqualStrings("\"a\nb\",c\r\n", w.buffered());
+}
+test "empty field and empty row" {
+    var buf: [64]u8 = undefined;
+    var w: Writer = .fixed(&buf);
+    try writeRow(&w, &.{ "", "x" });
+    try writeRow(&w, &.{});
+    try std.testing.expectEqualStrings(",x\r\n\r\n", w.buffered());
+}
+
+test "carriage return in field is quoted" {
+    var buf: [64]u8 = undefined;
+    var w: Writer = .fixed(&buf);
+    try writeRow(&w, &.{"a\rb"});
+    try std.testing.expectEqualStrings("\"a\rb\"\r\n", w.buffered());
 }
