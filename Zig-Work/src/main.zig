@@ -1,31 +1,21 @@
 const std = @import("std");
-const lib = @import("Library.zig");
 
-pub fn main() !void {
-    var buf: [256]u8 = undefined;
-    var w: std.Io.Writer = .fixed(&buf);
+pub fn main(init: std.process.Init) !void {
+    const allocator = init.arena.allocator();
+    var list: std.ArrayList(u32) = .empty;
+    defer list.deinit(allocator);
 
-    try lib.csv.writeRow(&w, &.{ "id", "name" });
-    try lib.csv.writeRow(&w, &.{ "1", "Sarthak, S." });
+    try list.append(allocator, 12);
+    try list.append(allocator, 13);
+    try list.append(allocator, 14);
+    try list.append(allocator, 15);
+    try list.append(allocator, 16);
 
-    std.debug.print("{s}", .{w.buffered()});
-
-    lib.print("Hello, from the smaller printer\n", .{});
-
-    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    defer arena.deinit();
-
-    const allocator = arena.allocator();
-
-    var root = try lib.Node.init(allocator, 10);
-    root = try lib.Node.init(allocator, 120);
-    root = try lib.Node.init(allocator, 110);
-    root = try lib.Node.init(allocator, 130);
-    root = try lib.Node.init(allocator, 150);
-
-    std.debug.print("Post Order : ", .{});
-    lib.postOrder(root);
-
-
-    
+    for (1.., list.items) |i, item| {
+        if (@mod(item, 2) == 0) {
+            std.debug.print("{d}. The item : {d} is even. \n", .{ i, item });
+        } else {
+            std.debug.print("{}. The item : {d} is odd. \n", .{ i, item });
+        }
+    }
 }
