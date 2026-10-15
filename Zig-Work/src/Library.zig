@@ -502,3 +502,42 @@ test "returnApiUsage rejects an unknown tier" {
         returnApiUsage(std.testing.allocator, "Sarthak", "gold"),
     );
 }
+
+// ---------------------------------------------------------------------------
+// Console I/O
+// ---------------------------------------------------------------------------
+
+/// Buffered stdin/stdout in one place, to avoid repeating the setup in `main`.
+///
+/// Create it with `var con: Console = undefined; con.init(io);`.
+/// Do not copy or move it after `init`: the reader and writer point at its buffers.
+pub const Console = struct {
+    stdin_buf: [1024]u8 = undefined,
+    stdout_buf: [1024]u8 = undefined,
+    stdin_reader: std.Io.File.Reader = undefined,
+    stdout_writer: std.Io.File.Writer = undefined,
+
+    pub fn init(self: *Console, io: std.Io) void {
+        self.stdin_reader = std.Io.File.stdin().reader(io, &self.stdin_buf);
+        self.stdout_writer = std.Io.File.stdout().writer(io, &self.stdout_buf);
+    }
+
+    /// Prints `prompt`, then reads one line and returns it trimmed.
+    /// Returns null at end of input. The slice points into the internal
+    /// buffer and is only valid until the next read.
+    pub fn ask(self: *Console, prompt: []const u8) !?[]const u8 {
+        const out = &self.stdout_writer.interface;
+        try out.writeAll(prompt);
+        try out.flush();
+
+        const line = try self.stdin_reader.interface.takeDelimiter('\n') orelse return null;
+        return trim(line);
+    }
+
+    /// Formatted print to stdout, flushed immediately.
+    pub fn say(self: *Console, comptime fmt: []const u8, args: anytype) !void {
+        const out = &self.stdout_writer.interface;
+        try out.print(fmt, args);
+        try out.flush();
+    }
+};
