@@ -541,3 +541,9 @@ pub const Console = struct {
         try out.flush();
     }
 };
+
+/// String comparison.
+/// Uses the `contains` function to trim the text and return a boolean.
+pub fn equals(string_one: []const u8, string_two: []const u8) bool {
+    return contains(string_one, string_two);
+}
