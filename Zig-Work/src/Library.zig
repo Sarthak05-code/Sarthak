@@ -547,3 +547,85 @@ pub const Console = struct {
 pub fn equals(string_one: []const u8, string_two: []const u8) bool {
     return contains(string_one, string_two);
 }
+
+/// Returns true if the trimmed `text` starts with `prefix`, ignoring ASCII case.
+pub fn startsWithIgnoreCase(text: []const u8, prefix: []const u8) bool {
+    return std.ascii.startsWithIgnoreCase(trim(text), prefix);
+}
+
+/// Returns true if the trimmed `text` ends with `suffix`, ignoring ASCII case.
+pub fn endsWithIgnoreCase(text: []const u8, suffix: []const u8) bool {
+    return std.ascii.endsWithIgnoreCase(trim(text), suffix);
+}
+
+/// Returns true if the trimmed `text` contains `value`, ignoring ASCII case.
+pub fn containsIgnoreCase(text: []const u8, value: []const u8) bool {
+    return std.ascii.indexOfIgnoreCase(trim(text), value) != null;
+}
+
+/// Returns true if both strings are equal after trimming, ignoring ASCII case.
+pub fn equalsIgnoreCase(a: []const u8, b: []const u8) bool {
+    return std.ascii.eqlIgnoreCase(trim(a), trim(b));
+}
+
+/// Returns true if `text` reads the same forwards and backwards,
+/// ignoring case and any non-alphanumeric characters.
+pub fn isPalindrome(text: []const u8) bool {
+    var left: usize = 0;
+    var right: usize = text.len; // half-open, like your binarySearch
+
+    while (left < right) {
+        if (!std.ascii.isAlphanumeric(text[left])) {
+            left += 1;
+            continue;
+        }
+        if (!std.ascii.isAlphanumeric(text[right - 1])) {
+            right -= 1;
+            continue;
+        }
+        if (std.ascii.toLower(text[left]) != std.ascii.toLower(text[right - 1])) return false;
+        left += 1;
+        right -= 1;
+    }
+    return true;
+}
+
+/// Number of levels in the tree. An empty tree has height 0.
+pub fn height(node: ?*const Node) usize {
+    const current = node orelse return 0;
+    return 1 + @max(height(current.left), height(current.right));
+}
+
+/// Turns `text` into a URL-friendly slug.
+///
+/// Letters and digits are kept (lowercased). Every run of other characters
+/// becomes a single `-`. No leading or trailing `-`. ASCII only.
+/// Caller owns the returned memory and must free it with `allocator`.
+pub fn slugify(allocator: std.mem.Allocator, text: []const u8) std.mem.Allocator.Error![]u8 {
+    // A slug is never longer than the input, so `text.len` is a safe buffer size.
+    const buf = try allocator.alloc(u8, text.len);
+    defer allocator.free(buf);
+
+    var len: usize = 0;
+    var pending_dash = false;
+
+    for (text) |char| {
+        if (std.ascii.isAlphanumeric(char)) {
+            // Only write the dash once we know a letter follows it,
+            // and never at the very start.
+            if (pending_dash and len > 0) {
+                buf[len] = '-';
+                len += 1;
+            }
+            pending_dash = false;
+
+            buf[len] = std.ascii.toLower(char);
+            len += 1;
+        } else {
+            pending_dash = true;
+        }
+    }
+
+    // Copy only the used part into an exactly-sized allocation.
+    return allocator.dupe(u8, buf[0..len]);
+}
