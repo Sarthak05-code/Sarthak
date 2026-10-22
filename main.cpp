@@ -1,20 +1,17 @@
 #include <iostream>
-#include <vector>
+#include <optional>
+
 using namespace std;
 
-template <typename T> class Stack {
-
-private:
-  vector<T> values;
-
-public:
-  void addValue(T value) { values.push_back(value); }
-
-  void tester() { cout << "Allocation " << values.capacity(); }
-};
+optional<int> number = nullopt;
 
 int main() {
-  Stack<int> num;
-  num.tester();
+
+  if (!number.has_value()) {
+    cout << "No value present";
+  } else {
+    cout << "Number is: " << number.value();
+  }
+
   return 0;
 }

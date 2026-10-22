@@ -19,6 +19,13 @@ pub fn main(init: std.process.Init) !void {
     defer allocator.free(slug);
 
     L.println(slug);
+
+    const answer = operator(i32, 12);
+    std.debug.print("The value is {any}", .{answer});
+}
+
+pub fn operator(comptime T: type, ops: T) !?T {
+    return ops;
 }
 
 const Status = enum(u32) { Ok = 200, Error = 404, Forbidden = 403 };
