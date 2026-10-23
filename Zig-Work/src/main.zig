@@ -1,34 +1,65 @@
 const std = @import("std");
-const L = @import("Library.zig");
-pub fn main(init: std.process.Init) !void {
-    var con: L.Console = undefined;
-    con.init(init.io);
-    const allocator = init.arena.allocator();
 
-    const Text = try con.ask("Enter any text : ") orelse return;
+const Element = enum {
+    Physical,
+    Fire,
+    Wind,
+    Lightning,
+    Imaginary,
+    Quantum,
+    Ice,
+};
 
-    if (L.equals(Text, "Hello")) {
-        L.println("Hello to you too.");
-    } else if (L.equals(Text, "Sarthak")) {
-        L.println("Hello , creator ");
-    } else {
-        L.println("HUH?");
+const Role = enum {
+    Attacker,
+    Support,
+    Tank,
+    Debuffer,
+};
+
+const CharacterIndex = struct {
+    character_id: u64,
+    character_name: []const u8,
+    character_gender: ?[]const u8,
+    element_type: Element,
+    faction: []const u8,
+    mechanics: Role,
+};
+
+pub fn main() !void {
+    // A team can contain up to 4 characters.
+    // null means that the slot is currently empty.
+    var character: [4]?CharacterIndex = .{
+        null,
+        null,
+        null,
+        null,
+    };
+
+    character[0] = CharacterIndex{
+        .character_id = 101,
+        .character_name = "Sarthak",
+        .character_gender = "Male",
+        .element_type = .Wind,
+        .faction = "A.V.M",
+        .mechanics = .Attacker,
+    };
+
+    // loop over the character, will loop 4 time since i hard coded 4 character above.
+    for (character) |maybe_character| {
+        // check if the character has `null` or not, only print if the value is not null.
+        if (maybe_character) |c| {
+            std.debug.print(
+                "Id: {} || Name: {s} || Gender: {s} || Element: {s} || Faction: {s} || Role: {s}\n",
+                .{
+                    c.character_id,
+                    c.character_name,
+                    c.character_gender orelse "Not defined",
+                    @tagName(c.element_type),
+                    c.faction,
+                    @tagName(c.mechanics),
+                },
+            );
+        }
     }
-
-    const slug = try L.slugify(allocator, "My First Blog Post");
-    defer allocator.free(slug);
-
-    L.println(slug);
-
-    const answer = operator(i32, 12);
-    std.debug.print("The value is {any}\n", .{answer});
-
-    const float = operator(f32, 12.2);
-    std.debug.print("{any}", .{float});
 }
-
-pub fn operator(comptime T: type, ops: T) !?T {
-    return ops;
-}
-
-const Status = enum(u32) { Ok = 200, Error = 404, Forbidden = 403 };
