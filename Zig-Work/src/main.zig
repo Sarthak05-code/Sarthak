@@ -21,7 +21,10 @@ pub fn main(init: std.process.Init) !void {
     L.println(slug);
 
     const answer = operator(i32, 12);
-    std.debug.print("The value is {any}", .{answer});
+    std.debug.print("The value is {any}\n", .{answer});
+
+    const float = operator(f32, 12.2);
+    std.debug.print("{any}", .{float});
 }
 
 pub fn operator(comptime T: type, ops: T) !?T {
