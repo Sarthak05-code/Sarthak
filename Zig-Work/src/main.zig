@@ -44,22 +44,4 @@ pub fn main() !void {
         .faction = "A.V.M",
         .mechanics = .Attacker,
     };
-
-    // loop over the character, will loop 4 time since i hard coded 4 character above.
-    for (character) |maybe_character| {
-        // check if the character has `null` or not, only print if the value is not null.
-        if (maybe_character) |c| {
-            std.debug.print(
-                "Id: {} || Name: {s} || Gender: {s} || Element: {s} || Faction: {s} || Role: {s}\n",
-                .{
-                    c.character_id,
-                    c.character_name,
-                    c.character_gender orelse "Not defined",
-                    @tagName(c.element_type),
-                    c.faction,
-                    @tagName(c.mechanics),
-                },
-            );
-        }
-    }
 }
