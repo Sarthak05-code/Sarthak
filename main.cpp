@@ -3,9 +3,9 @@
 
 using namespace std;
 typedef string str;
-
-
-
+typedef long long ll;
+typedef unsigned long long ull;
+typedef unsigned long ul;
 
 optional<int> number = nullopt;
 
@@ -22,11 +22,14 @@ int main() {
     if (c != 'z')
       continue;
     else
-        cout << "Found `z` \n";
+      cout << "Found `z` \n";
   }
 
   str name = "Sarthak";
   cout << "What is my name -> : " << name << endl;
+
+  ull number = 10;
+  cout << "The unsigned long long number is : " << number << endl;
 
   return 0;
 }
