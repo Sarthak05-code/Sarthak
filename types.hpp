@@ -60,10 +60,82 @@ public:
   int getAge() { return age; }
 
   int returnHighestValue() {
-      if (data.empty()) {
-          throw runtime_error("Cannot find the max value in the empty vector.");
-      }
+    if (data.empty()) {
+      throw runtime_error("Cannot find the max value in the empty vector.");
+    }
 
-      return *max_element(data.begin(), data.end());
+    return *max_element(data.begin(), data.end());
+  }
+};
+
+#include <cstdint>
+#include <iostream>
+#include <string>
+#include <vector>
+
+enum class Role { Admin, Client };
+
+struct User {
+  std::uint64_t id;
+  std::string name;
+  int age;
+  Role role;
+};
+
+std::string toString(Role role) {
+  switch (role) {
+  case Role::Admin:
+    return "Admin";
+  case Role::Client:
+    return "Client";
+  }
+
+  return "Unknown";
+}
+
+class UserManager {
+private:
+  std::vector<User> users;
+  std::uint64_t nextId = 1;
+
+public:
+  std::uint64_t addUser(const std::string &name, int age, Role role) {
+    const std::uint64_t id = nextId++;
+
+    users.push_back(User{id, name, age, role});
+
+    return id;
+  }
+
+  const User *findById(std::uint64_t id) const {
+    for (const User &user : users) {
+      if (user.id == id) {
+        return &user;
+      }
+    }
+
+    return nullptr;
+  }
+
+  bool userExists(std::uint64_t id) const { return findById(id) != nullptr; }
+
+  void displayUser(std::uint64_t id) const {
+    const User *user = findById(id);
+
+    if (user == nullptr) {
+      std::cout << "User not found.\n";
+      return;
+    }
+
+    std::cout << "ID: " << user->id << "\nName: " << user->name
+              << "\nAge: " << user->age << "\nRole: " << toString(user->role)
+              << '\n';
+  }
+
+  void displayAllUsers() const {
+    for (const User &user : users) {
+      displayUser(user.id);
+      std::cout << "------------------\n";
+    }
   }
 };
