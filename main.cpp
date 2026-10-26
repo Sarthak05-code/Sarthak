@@ -7,6 +7,15 @@ typedef long long ll;
 typedef unsigned long long ull;
 typedef unsigned long ul;
 
+#define f(x) (2 * x + 3 ^ x + 1)
+
+ull hasher(int number, bool hash = true) {
+  if (hash) {
+    return 1923377282;
+  }
+  return number;
+}
+
 optional<int> number = nullopt;
 
 int main() {
@@ -30,6 +39,12 @@ int main() {
 
   ull number = 10;
   cout << "The unsigned long long number is : " << number << endl;
+
+  auto answer = hasher(1025);
+  cout << "The hashed is : " << answer << endl;
+
+  auto ans = f(2);
+  cout << "Integer -> " << ans << endl;
 
   return 0;
 }
