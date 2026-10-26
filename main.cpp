@@ -1,50 +1,19 @@
+#include "types.hpp"
 #include <iostream>
-#include <optional>
 
 using namespace std;
-typedef string str;
-typedef long long ll;
-typedef unsigned long long ull;
-typedef unsigned long ul;
-
-#define f(x) (2 * x + 3 ^ x + 1)
-
-ull hasher(int number, bool hash = true) {
-  if (hash) {
-    return 1923377282;
-  }
-  return number;
-}
-
-optional<int> number = nullopt;
 
 int main() {
-  string caller = "Sarthak";
+  Cache cache;
+  cache.setData("Sarthak", 20, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+  auto age = cache.getAge();
+  auto name = cache.getName();
+  cout << "Your name : " << name << " <-> Your age : " << age << endl;
 
-  if (!number.has_value()) {
-    cout << "No value present\n";
-  } else {
-    cout << "Number is: \n" << number.value();
-  }
+  cache.display();
 
-  for (auto c : caller) {
-    if (c != 'z')
-      continue;
-    else
-      cout << "Found `z` \n";
-  }
-
-  str name = "Sarthak";
-  cout << "What is my name -> : " << name << endl;
-
-  ull number = 10;
-  cout << "The unsigned long long number is : " << number << endl;
-
-  auto answer = hasher(1025);
-  cout << "The hashed is : " << answer << endl;
-
-  auto ans = f(2);
-  cout << "Integer -> " << ans << endl;
+  cout << "The highest value in the vector is : " << cache.returnHighestValue()
+       << endl;
 
   return 0;
 }
