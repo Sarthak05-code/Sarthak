@@ -1,16 +1,17 @@
 const std = @import("std");
+const lib = @import("Library.zig");
 
 pub fn main(init: std.process.Init) !void {
-    const allocator = init.arena.allocator();
-    var Names: std.ArrayList([]const u8) = .empty;
-    defer Names.deinit(allocator);
+    var cons: lib.Console = undefined;
+    cons.init(init.io);
 
-    try Names.append(allocator, "Sarthak");
-    try Names.append(allocator, "Ayush");
-    try Names.append(allocator, "Rhythmn");
-    try Names.append(allocator, "Thyrem");
-
-    for (Names.items, 0..) |name, i| {
-        std.debug.print("Name {d}: {s} \n", .{ i + 1, name });
+    if (try cons.ask("Enter a sentence: ")) |message| {
+        if (lib.equals("Gojo Satorou", message)) {
+            try cons.sayColored(lib.ColorAscii.yellow, "Domain Expansion: Are you {s} because you're the strongest, or are you the strongest because you're {s}?\n", .{ message, message });
+        } else {
+            try cons.sayColored(lib.ColorAscii.green, "You typed: {s}\n", .{message});
+        }
+    } else {
+        try cons.sayColored(lib.ColorAscii.red, "Error: No input received. EOF reached!\n", .{});
     }
 }

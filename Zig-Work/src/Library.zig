@@ -540,12 +540,21 @@ pub const Console = struct {
         try out.print(fmt, args);
         try out.flush();
     }
+
+    /// Automatically prints with a color code and resets it.
+    pub fn sayColored(self: *Console, color: []const u8, comptime fmt: []const u8, args: anytype) !void {
+        const out = &self.stdout_writer.interface;
+        try out.writeAll(color);
+        try out.print(fmt, args);
+        try out.writeAll(ColorAscii.reset);
+        try out.flush();
+    }
 };
 
 /// String comparison.
-/// Uses the `contains` function to trim the text and return a boolean.
+/// Returns true if both strings are identical after trimming.
 pub fn equals(string_one: []const u8, string_two: []const u8) bool {
-    return contains(string_one, string_two);
+    return std.mem.eql(u8, trim(string_one), trim(string_two));
 }
 
 /// Returns true if the trimmed `text` starts with `prefix`, ignoring ASCII case.
@@ -629,3 +638,13 @@ pub fn slugify(allocator: std.mem.Allocator, text: []const u8) std.mem.Allocator
     // Copy only the used part into an exactly-sized allocation.
     return allocator.dupe(u8, buf[0..len]);
 }
+
+/// Color Ascii version.
+pub const ColorAscii = struct {
+    pub const red = "\x1b[31m";
+    pub const green = "\x1b[32m";
+    pub const yellow = "\x1b[33m";
+    pub const blue = "\x1b[34m";
+    pub const black = "\x1b[30m";
+    pub const reset = "\x1b[0m";
+};
