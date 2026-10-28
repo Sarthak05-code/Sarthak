@@ -1,47 +1,16 @@
 const std = @import("std");
 
-const Element = enum {
-    Physical,
-    Fire,
-    Wind,
-    Lightning,
-    Imaginary,
-    Quantum,
-    Ice,
-};
+pub fn main(init: std.process.Init) !void {
+    const allocator = init.arena.allocator();
+    var Names: std.ArrayList([]const u8) = .empty;
+    defer Names.deinit(allocator);
 
-const Role = enum {
-    Attacker,
-    Support,
-    Tank,
-    Debuffer,
-};
+    try Names.append(allocator, "Sarthak");
+    try Names.append(allocator, "Ayush");
+    try Names.append(allocator, "Rhythmn");
+    try Names.append(allocator, "Thyrem");
 
-const CharacterIndex = struct {
-    character_id: u64,
-    character_name: []const u8,
-    character_gender: ?[]const u8,
-    element_type: Element,
-    faction: []const u8,
-    mechanics: Role,
-};
-
-pub fn main() !void {
-    // A team can contain up to 4 characters.
-    // null means that the slot is currently empty.
-    var character: [4]?CharacterIndex = .{
-        null,
-        null,
-        null,
-        null,
-    };
-
-    character[0] = CharacterIndex{
-        .character_id = 101,
-        .character_name = "Sarthak",
-        .character_gender = "Male",
-        .element_type = .Wind,
-        .faction = "A.V.M",
-        .mechanics = .Attacker,
-    };
+    for (Names.items, 0..) |name, i| {
+        std.debug.print("Name {d}: {s} \n", .{ i + 1, name });
+    }
 }
