@@ -4,47 +4,118 @@ const lib = @import("Library.zig");
 const ListItems = union(enum) {
     int: i64,
     text: []const u8,
+    points: f64,
 };
 
 pub fn main(init: std.process.Init) !void {
     const allocator = init.arena.allocator();
+
     var cons: lib.Console = undefined;
     cons.init(init.io);
 
-    var mixed_list: std.ArrayList(ListItems) = .empty;
-    defer mixed_list.deinit(allocator);
+    var hetero_list: std.ArrayList(ListItems) = .empty;
+    defer hetero_list.deinit(allocator);
 
-    try cons.sayColored(lib.ColorAscii.blue, "Mixed List => Accepts both i64 and []const u8 : \n", .{});
-    try cons.say("Type number or text. Type done or enter to exit the loop.\n", .{});
+    try cons.sayStyled(
+        lib.ColorAscii.bold ++
+            lib.ColorAscii.blue ++
+            lib.ColorAscii.bg_yellow,
+        "Mixed Array List.\n",
+        .{},
+    );
+
+    try cons.say(
+        "Enter an integer, double, or text. Press Enter or type done to exit.\n",
+        .{},
+    );
 
     while (true) {
-        const input_text = try cons.ask("Add items : ");
+        const input_text = try cons.ask("Add items: ");
 
         if (input_text) |input| {
             if (input.len == 0 or lib.equals("done", input)) {
                 break;
             }
 
-            if (std.fmt.parseInt(i64, input, 10)) |num| {
-                try mixed_list.append(allocator, .{ .int = num });
-                try cons.sayColored(lib.ColorAscii.green, " --> Added items (Integer) : [{d}]\n", .{num});
-            } else |_| {
-                const owned_text = try allocator.dupe(u8, input);
-                try mixed_list.append(allocator, .{ .text = owned_text });
-                try cons.sayColored(lib.ColorAscii.green, " --> Added items (text) [{s}]\n", .{owned_text});
+            const parsed_int: ?i64 =
+                std.fmt.parseInt(i64, input, 10) catch null;
+
+            if (parsed_int) |number| {
+                try hetero_list.append(allocator, .{ .int = number });
+
+                try cons.sayColored(
+                    lib.ColorAscii.italic ++ lib.ColorAscii.bright_green,
+                    " --> You entered (Integer): [{d}]\n",
+                    .{number},
+                );
+            } else {
+                const parsed_float: ?f64 =
+                    std.fmt.parseFloat(f64, input) catch null;
+
+                if (parsed_float) |number| {
+                    try hetero_list.append(allocator, .{ .points = number });
+
+                    try cons.sayColored(
+                        lib.ColorAscii.italic ++ lib.ColorAscii.bright_green,
+                        " --> You entered (Float): [{d}]\n",
+                        .{number},
+                    );
+                } else {
+                    const owned_text = try allocator.dupe(u8, input);
+
+                    try hetero_list.append(
+                        allocator,
+                        .{ .text = owned_text },
+                    );
+
+                    try cons.sayColored(
+                        lib.ColorAscii.italic ++ lib.ColorAscii.bright_green,
+                        " --> You entered (String): [{s}]\n",
+                        .{owned_text},
+                    );
+                }
             }
         } else {
             break;
         }
     }
-    try cons.sayColored(lib.ColorAscii.red, "Final array list values. \n", .{});
-    if (mixed_list.items.len == 0) {
-        try cons.say("Your arraylist is empty. \n", .{});
+
+    try cons.sayColored(
+        lib.all_style ++ lib.ColorAscii.orange,
+        "Final List.\n",
+        .{},
+    );
+
+    if (hetero_list.items.len == 0) {
+        try cons.sayColored(
+            lib.ColorAscii.strikethrough ++ lib.ColorAscii.pink,
+            "Your list is empty.\n",
+            .{},
+        );
     } else {
-        for (mixed_list.items, 1..) |items, i| {
-            switch (items) {
-                .int => |val| try cons.say("[{d}]. Items Name : {d}\n", .{ i, val }),
-                .text => |val| try cons.say("[{d}]. Items Name : {s}\n", .{ i, val }),
+        for (hetero_list.items, 1..) |item, i| {
+            switch (item) {
+                .int => |val| {
+                    try cons.sayColored(
+                        lib.ColorAscii.underline ++ lib.ColorAscii.gold,
+                        "[{d}] Item (Integer): {d}\n",
+                        .{ i, val },
+                    );
+                },
+                .points => |val| {
+                    try cons.sayColored(
+                        lib.ColorAscii.underline ++ lib.ColorAscii.gold,
+                        "[{d}] Item (Float): {d}\n",
+                        .{ i, val },
+                    );
+                },
+                .text => |val| {
+                    try cons.sayColored(
+                        lib.ColorAscii.underline ++ lib.ColorAscii.gold,
+                        "[{d}] Item (String): {s}\n",
+                        .{ i, val },
+                    );
+                },
             }
         }
     }
