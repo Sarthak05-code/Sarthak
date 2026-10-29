@@ -582,8 +582,8 @@ pub fn containsIgnoreCase(text: []const u8, value: []const u8) bool {
 }
 
 /// Returns true if both strings are equal after trimming, ignoring ASCII case.
-pub fn equalsIgnoreCase(a: []const u8, b: []const u8) bool {
-    return std.ascii.eqlIgnoreCase(trim(a), trim(b));
+pub fn equalsIgnoreCase(string_one: []const u8, string_two: []const u8) bool {
+    return std.ascii.eqlIgnoreCase(trim(string_one), trim(string_two));
 }
 
 /// Returns true if `text` reads the same forwards and backwards,

@@ -80,43 +80,23 @@ pub fn main(init: std.process.Init) !void {
         }
     }
 
-    try cons.sayColored(
-        lib.all_style ++ lib.ColorAscii.orange,
-        "Final List.\n",
-        .{},
-    );
-
-    if (hetero_list.items.len == 0) {
-        try cons.sayColored(
-            lib.ColorAscii.strikethrough ++ lib.ColorAscii.pink,
-            "Your list is empty.\n",
-            .{},
-        );
-    } else {
-        for (hetero_list.items, 1..) |item, i| {
-            switch (item) {
-                .int => |val| {
-                    try cons.sayColored(
-                        lib.ColorAscii.underline ++ lib.ColorAscii.gold,
-                        "[{d}] Item (Integer): {d}\n",
-                        .{ i, val },
-                    );
-                },
-                .points => |val| {
-                    try cons.sayColored(
-                        lib.ColorAscii.underline ++ lib.ColorAscii.gold,
-                        "[{d}] Item (Float): {d}\n",
-                        .{ i, val },
-                    );
-                },
-                .text => |val| {
-                    try cons.sayColored(
-                        lib.ColorAscii.underline ++ lib.ColorAscii.gold,
-                        "[{d}] Item (String): {s}\n",
-                        .{ i, val },
-                    );
-                },
+    try cons.sayColored(lib.TextStyle.success, "Do you wanna see the final list.?\n", .{});
+    try cons.sayColored(lib.TextStyle.highlighted ++ lib.TextStyle.success, "Yes -> \n", .{});
+    try cons.sayColored(lib.TextStyle.highlighted ++ lib.TextStyle.error_msg, "No. -> \n", .{});
+    const answer = try cons.ask(">. ");
+    if (answer) |ans| {
+        if (lib.equalsIgnoreCase(ans, "Yes")) {
+            for (hetero_list.items, 1..) |items, i| {
+                switch (items) {
+                    .int => |val| try cons.sayColored(lib.TextStyle.all_style ++ lib.ColorAscii.blue, "[{d}] Items (Integer): {d}\n", .{ i, val }),
+                    .points => |val| try cons.sayColored(lib.TextStyle.all_style ++ lib.ColorAscii.purple, "[{d}] Items (float): {any}\n", .{ i, val }),
+                    .text => |val| try cons.sayColored(lib.TextStyle.all_style ++ lib.ColorAscii.cyan, "[{d}] Items (string): {s}\n", .{ i, val }),
+                }
             }
+        } else {
+            try cons.sayColored(lib.TextStyle.bold_underline ++ lib.ColorAscii.green, "Thank you. \n", .{});
         }
+    } else {
+        try cons.sayColored(lib.TextStyle.error_msg, "Error in Input.\n", .{});
     }
 }
