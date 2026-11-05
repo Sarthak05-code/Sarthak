@@ -1,102 +1,183 @@
 const std = @import("std");
 const lib = @import("Library.zig");
 
-const ListItems = union(enum) {
-    int: i64,
-    text: []const u8,
-    points: f64,
-};
+// Helper: reads a line and converts it into an integer.
+fn readInt(cons: *lib.Console, prompt: []const u8) !i32 {
+    const input = (try cons.ask(prompt)) orelse return error.EndOfInput;
+    return try std.fmt.parseInt(i32, input, 10);
+}
 
 pub fn main(init: std.process.Init) !void {
-    const allocator = init.arena.allocator();
-
     var cons: lib.Console = undefined;
     cons.init(init.io);
 
-    var hetero_list: std.ArrayList(ListItems) = .empty;
-    defer hetero_list.deinit(allocator);
+    const allocator = init.arena.allocator();
+
+    // 1. Get dimensions
+    try cons.sayStyled(
+        lib.ColorAscii.blue ++ lib.TextStyle.all_style,
+        "Enter P (number of processes):\n",
+        .{},
+    );
+
+    const p_input = try readInt(&cons, "> ");
+
+    if (p_input <= 0) return error.InvalidProcessCount;
+
+    const p: usize = @intCast(p_input);
 
     try cons.sayStyled(
-        lib.ColorAscii.bold ++
-            lib.ColorAscii.blue ++
-            lib.ColorAscii.bg_yellow,
-        "Mixed Array List.\n",
+        lib.ColorAscii.blue ++ lib.TextStyle.all_style,
+        "Enter R (number of resources):\n",
         .{},
     );
 
-    try cons.say(
-        "Enter an integer, double, or text. Press Enter or type done to exit.\n",
-        .{},
-    );
+    const r_input = try readInt(&cons, "> ");
 
-    while (true) {
-        const input_text = try cons.ask("Add items: ");
+    if (r_input <= 0) return error.InvalidResourceCount;
 
-        if (input_text) |input| {
-            if (input.len == 0 or lib.equals("done", input)) {
-                break;
-            }
+    const r: usize = @intCast(r_input);
 
-            const parsed_int: ?i64 =
-                std.fmt.parseInt(i64, input, 10) catch null;
+    // 2. Allocate memory for matrices and vectors
 
-            if (parsed_int) |number| {
-                try hetero_list.append(allocator, .{ .int = number });
+    if (r > std.math.maxInt(usize) / p) {
+        return error.DimensionOverflow;
+    }
 
-                try cons.sayColored(
-                    lib.ColorAscii.italic ++ lib.ColorAscii.bright_green,
-                    " --> You entered (Integer): [{d}]\n",
-                    .{number},
-                );
-            } else {
-                const parsed_float: ?f64 =
-                    std.fmt.parseFloat(f64, input) catch null;
+    const total = p * r;
 
-                if (parsed_float) |number| {
-                    try hetero_list.append(allocator, .{ .points = number });
+    const alloc = try allocator.alloc(i32, total);
+    const req = try allocator.alloc(i32, total);
 
-                    try cons.sayColored(
-                        lib.ColorAscii.italic ++ lib.ColorAscii.bright_green,
-                        " --> You entered (Float): [{d}]\n",
-                        .{number},
-                    );
-                } else {
-                    const owned_text = try allocator.dupe(u8, input);
+    const avail = try allocator.alloc(i32, r);
+    const worker = try allocator.alloc(i32, r);
+    const finish = try allocator.alloc(bool, p);
 
-                    try hetero_list.append(
-                        allocator,
-                        .{ .text = owned_text },
-                    );
+    @memset(finish, false);
 
-                    try cons.sayColored(
-                        lib.ColorAscii.italic ++ lib.ColorAscii.bright_green,
-                        " --> You entered (String): [{s}]\n",
-                        .{owned_text},
-                    );
-                }
-            }
-        } else {
-            break;
+    // 3. Input Allocation matrix
+
+    for (0..p) |i| {
+        for (0..r) |j| {
+            try cons.sayStyled(
+                lib.TextStyle.bold_italic ++ lib.ColorAscii.yellow,
+                "Enter Alloc[{d}][{d}]:\n",
+                .{ i, j },
+            );
+
+            const value = try readInt(&cons, "> ");
+
+            if (value < 0) return error.NegativeResourceValue;
+
+            alloc[i * r + j] = value;
         }
     }
 
-    try cons.sayColored(lib.TextStyle.success, "Do you wanna see the final list.?\n", .{});
-    try cons.sayColored(lib.TextStyle.highlighted ++ lib.TextStyle.success, "Yes -> \n", .{});
-    try cons.sayColored(lib.TextStyle.highlighted ++ lib.TextStyle.error_msg, "No. -> \n", .{});
-    const answer = try cons.ask(">. ");
-    if (answer) |ans| {
-        if (lib.equalsIgnoreCase(ans, "Yes")) {
-            for (hetero_list.items, 1..) |items, i| {
-                switch (items) {
-                    .int => |val| try cons.sayColored(lib.TextStyle.all_style ++ lib.ColorAscii.blue, "[{d}] Items (Integer): {d}\n", .{ i, val }),
-                    .points => |val| try cons.sayColored(lib.TextStyle.all_style ++ lib.ColorAscii.purple, "[{d}] Items (float): {any}\n", .{ i, val }),
-                    .text => |val| try cons.sayColored(lib.TextStyle.all_style ++ lib.ColorAscii.cyan, "[{d}] Items (string): {s}\n", .{ i, val }),
+    // 4. Input Request matrix
+
+    for (0..p) |i| {
+        for (0..r) |j| {
+            try cons.sayStyled(
+                lib.TextStyle.bold_italic ++ lib.ColorAscii.green,
+                "Enter Request[{d}][{d}]:\n",
+                .{ i, j },
+            );
+
+            const value = try readInt(&cons, "> ");
+
+            if (value < 0) return error.NegativeResourceValue;
+
+            req[i * r + j] = value;
+        }
+    }
+
+    // 5. Input Available vector
+
+    for (0..r) |j| {
+        try cons.sayStyled(
+            lib.ColorAscii.cyan ++ lib.ColorAscii.bold,
+            "Enter Available[{d}]:\n",
+            .{j},
+        );
+
+        const value = try readInt(&cons, "> ");
+
+        if (value < 0) return error.NegativeResourceValue;
+
+        avail[j] = value;
+    }
+
+    // 6. Initialize Work = Available
+
+    @memcpy(worker, avail);
+
+    // 7. Mark processes holding no resources as finished
+
+    for (0..p) |i| {
+        var holding_resources = false;
+
+        for (0..r) |j| {
+            if (alloc[i * r + j] != 0) {
+                holding_resources = true;
+                break;
+            }
+        }
+
+        if (!holding_resources) {
+            finish[i] = true;
+        }
+    }
+
+    // 8. Deadlock Detection Algorithm
+
+    var found = true;
+
+    while (found) {
+        found = false;
+
+        for (0..p) |i| {
+            if (!finish[i]) {
+                var can_finish = true;
+
+                // Check Request <= Work
+
+                for (0..r) |j| {
+                    if (req[i * r + j] > worker[j]) {
+                        can_finish = false;
+                        break;
+                    }
+                }
+
+                // Release resources if process can finish
+
+                if (can_finish) {
+                    for (0..r) |j| {
+                        worker[j] += alloc[i * r + j];
+                    }
+
+                    finish[i] = true;
+                    found = true;
                 }
             }
-        } else {
-            try cons.sayColored(lib.TextStyle.bold_underline ++ lib.ColorAscii.green, "Thank you. \n", .{});
         }
+    }
+
+    // 9. Identify deadlocked processes
+
+    var deadlock = false;
+
+    std.debug.print("\nDeadlocked processes: ", .{});
+
+    for (0..p) |i| {
+        if (!finish[i]) {
+            std.debug.print("P{d} ", .{i});
+            deadlock = true;
+        }
+    }
+
+    if (deadlock) {
+        std.debug.print("\nSYSTEM IS IN DEADLOCK.\n", .{});
     } else {
-        try cons.sayColored(lib.TextStyle.error_msg, "Error in Input.\n", .{});
+        std.debug.print("None\nSYSTEM IS NOT IN DEADLOCK.\n", .{});
     }
 }
