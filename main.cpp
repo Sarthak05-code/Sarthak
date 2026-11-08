@@ -1,71 +1,30 @@
-
 #include <algorithm>
-#include <concepts>
 #include <iostream>
 #include <vector>
-
 using namespace std;
 
-template <typename T>
-  requires std::totally_ordered<T>
-
-class DataManager {
-
+template <typename T> class RanDex {
 private:
-  vector<T> values;
+  T item;
+  vector<T> datas;
 
 public:
-  // Add values
-  void add(T value) { values.push_back(value); }
+  RanDex(T data) { item = data; }
+  RanDex(vector<T> datas) { datas = datas; }
 
-  // Display values
-  void display() const {
+  void displayData() { cout << "-> " << item; }
 
-    for (const auto &value : values) {
-      cout << value << " ";
+  void sortUnsortedVector() { sort(datas.begin(), datas.end()); }
+
+  void display() {
+    for (auto data : datas) {
+      cout << " " << data << endl;
     }
-
-    cout << endl;
-  }
-
-  // Sort values
-  void sortData() { sort(values.begin(), values.end()); }
-
-  // Search for a value
-  auto search(T target) const {
-
-    return find(values.begin(), values.end(), target) != values.end();
-  }
-
-  // Count values greater than a given number
-  auto countGreater(T target) const {
-
-    return count_if(values.begin(), values.end(),
-                    [target](const T &value) { return value > target; });
   }
 };
 
 int main() {
-
-  DataManager<int> manager;
-
-  manager.add(50);
-  manager.add(10);
-  manager.add(40);
-  manager.add(20);
-  manager.add(30);
-
-  cout << "Original values: ";
-  manager.display();
-
-  manager.sortData();
-
-  cout << "Sorted values: ";
-  manager.display();
-
-  cout << "Search 30: " << manager.search(30) << endl;
-
-  cout << "Values greater than 20: " << manager.countGreater(20) << endl;
-
+  RanDex<int> rd({10,20,30});
+  rd(10)
   return 0;
 }
