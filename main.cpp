@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <iostream>
 #include <queue>
 #include <type_traits>
@@ -7,6 +8,9 @@ template <typename T> struct is_queue : std::false_type {};
 
 template <typename T, typename Container>
 struct is_queue<std::queue<T, Container>> : std::true_type {};
+
+typedef uint32_t i32;
+typedef std::string immutable;
 
 // 2. Use std::enable_if in the return type (or template parameter)
 template <typename T>
