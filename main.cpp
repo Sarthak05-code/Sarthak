@@ -11,6 +11,7 @@ struct is_queue<std::queue<T, Container>> : std::true_type {};
 
 typedef uint32_t i32;
 typedef std::string immutable;
+#define f(x) (x**2 + 3*x +1)
 
 // 2. Use std::enable_if in the return type (or template parameter)
 template <typename T>
@@ -25,6 +26,8 @@ int main() {
 
   // std::vector<int> v;
   // process_queue(v); // Compile Error: no matching function for call!
+  int var = 10;
+  int ans = f(var);
 
   return 0;
 }
